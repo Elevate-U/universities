@@ -86,6 +86,19 @@ tr:hover {
 .university-details a:hover {
     text-decoration: underline;
 }
+
+/* RMP Details Styling */
+.university-details h3 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    color: #444;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 3px;
+}
+
+.university-details p strong { /* Make RMP labels bold */
+    color: #555;
+}
 .cost-breakdown {
     margin-top: 15px;
     padding: 10px;

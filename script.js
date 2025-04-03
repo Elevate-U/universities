@@ -71,8 +71,12 @@ function parseCSV(csvText) {
         "TotalPopulation": "totalPopulation",
         "Demographics": "demographics",
         "AvgClassSize": "avgClassSize",
-        "PTClassSize": "ptClassSize"
-        // Add other mappings if needed from your CSV
+        "PTClassSize": "ptClassSize",
+        "RMP_Score": "rmpScore",
+        "RMP_Link": "rmpLink",
+        "RMP_Summary": "rmpSummary",
+        "RMP_PT_Profs": "rmpPtProfs",
+        "RMP_FirstYear_Recs": "rmpFirstYearRecs"
     };
 
     // Find the index for each required header
@@ -363,6 +367,11 @@ function displayDetails(university) {
             <p><strong>Demographics:</strong> ${university.demographics || 'N/A'}</p>
             <p><strong>Avg Class Size/Ratio:</strong> ${university.avgClassSize || 'N/A'}</p>
             <p><strong>PT Class Size:</strong> ${university.ptClassSize || 'N/A'}</p>
+            <h3>Rate My Professors Info:</h3>
+            <p><strong>Overall Score:</strong> ${university.rmpScore || 'N/A'} ${university.rmpLink && university.rmpLink !== 'N/A' ? `(<a href="${university.rmpLink}" target="_blank">Link</a>)` : ''}</p>
+            <p><strong>School Summary:</strong> ${university.rmpSummary || 'N/A'}</p>
+            <p><strong>PT/Related Professors:</strong> ${university.rmpPtProfs || 'N/A'}</p>
+            <p><strong>First Year Recs:</strong> ${university.rmpFirstYearRecs || 'N/A'}</p>
     `;
 
     // Handle Cost Breakdown - Check if it looks like HTML or needs simple formatting

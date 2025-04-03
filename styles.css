@@ -162,3 +162,33 @@ tr:hover {
     left: 0;
     z-index: 3; /* Ensure top-left corner is above everything */
 }
+
+/* --- Net Cost Data Bar Styles --- */
+.net-cost-cell-wrapper {
+    position: relative; /* For positioning the bar container */
+    min-height: 1.2em; /* Ensure space for the bar even if text is short */
+    padding-bottom: 5px; /* Add some space below the text */
+}
+
+.net-cost-value {
+    display: block; /* Ensure text is on its own line */
+    margin-bottom: 2px; /* Space between text and bar container */
+}
+
+.net-cost-bar-container {
+    position: relative; /* Or absolute if needed, relative to wrapper */
+    height: 8px; /* Height of the bar track */
+    background-color: #e0e0e0; /* Light grey background for the track */
+    border-radius: 4px;
+    overflow: hidden; /* Ensure bar stays within container bounds */
+}
+
+.net-cost-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: #64b5f6; /* A blue color for the bar, adjust as needed */
+    border-radius: 4px;
+    transition: width 0.3s ease-in-out; /* Optional: Animate width changes */
+}

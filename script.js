@@ -121,7 +121,25 @@ async function loadAndDisplayData() {
              return;
         }
 
-        populateTable(universities); // Populate table with fresh data
+        // --- Calculate Min/Max Net Cost for Data Bars ---
+        let minCost = Infinity;
+        let maxCost = -Infinity;
+        universities.forEach(uni => {
+            const cost = calculateNetCost(uni);
+            if (!isNaN(cost)) {
+                if (cost < minCost) minCost = cost;
+                if (cost > maxCost) maxCost = cost;
+            }
+        });
+        // Handle case where no valid costs are found
+        if (minCost === Infinity || maxCost === -Infinity) {
+            minCost = 0;
+            maxCost = 0;
+        }
+        const costRange = maxCost - minCost;
+        // --- End Min/Max Calculation ---
+
+        populateTable(universities, minCost, costRange); // Pass minCost and costRange
         updateHeaderSortIndicators(); // Update sort indicators
         // Clear details and selection when data reloads initially
         detailsDiv.innerHTML = '';
@@ -245,7 +263,7 @@ function formatNetCost(netCost, universityName) {
 
 
 // --- Table Population Function ---
-function populateTable(data) {
+function populateTable(data, minCost, costRange) { // Added minCost, costRange params
     tableBody.innerHTML = ''; // Clear existing rows
 
     data.forEach((university) => { // No need for index here anymore unless for debugging
@@ -274,9 +292,32 @@ function populateTable(data) {
 
         // Calculate and display Net Cost
         const netCost = calculateNetCost(university);
-        netCostCell.textContent = formatNetCost(netCost, university.name);
-        // Store the raw numeric net cost for sorting
+        // Store the raw numeric net cost for sorting FIRST
         netCostCell.dataset.value = isNaN(netCost) ? -Infinity : netCost; // Use -Infinity for N/A
+
+        // --- Create Data Bar HTML ---
+        const netCostText = formatNetCost(netCost, university.name);
+        let barPercent = 0;
+        if (!isNaN(netCost) && costRange > 0) {
+            barPercent = Math.max(0, Math.min(100, ((netCost - minCost) / costRange) * 100));
+        } else if (!isNaN(netCost) && costRange === 0 && maxCost > 0 && netCost === maxCost) {
+             // Handle case where all valid costs are the same positive value
+             barPercent = 100;
+        } else if (!isNaN(netCost) && costRange === 0 && maxCost <= 0 && netCost === maxCost) {
+             // Handle case where all valid costs are the same non-positive value
+             barPercent = 0; // Or decide how to represent this visually
+        }
+        // If netCost is NaN, barPercent remains 0
+
+        netCostCell.innerHTML = `
+            <div class="net-cost-cell-wrapper" title="Net Cost: ${netCostText}">
+              <span class="net-cost-value">${netCostText}</span>
+              <div class="net-cost-bar-container">
+                 <div class="net-cost-bar" style="width: ${barPercent.toFixed(2)}%;" aria-hidden="true"></div>
+              </div>
+            </div>
+        `;
+        // --- End Data Bar HTML ---
 
         // Populate new cells with fallbacks
         populationCell.textContent = university.totalPopulation || 'N/A';

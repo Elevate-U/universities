@@ -1,0 +1,164 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f9f9f9;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: white;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px; /* Reduced padding */
+    text-align: left;
+}
+th {
+    background-color: #4CAF50;
+    color: white;
+    /* position: relative; */ /* Removed - Let sticky handle positioning context */
+    cursor: pointer; /* Indicate clickable headers */
+}
+/* Add space for sort indicators */
+th::after {
+    content: '';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 4px solid transparent;
+}
+/* Default sort indicator (up/down arrows combined - subtle) */
+th.sortable::after {
+    content: ' \2195'; /* Up-down arrow */
+    opacity: 0.5;
+}
+/* Ascending sort indicator */
+th.sort-asc::after {
+    content: ' \25B2'; /* Up arrow */
+    opacity: 1;
+    /* border-bottom-color: white; */
+}
+/* Descending sort indicator */
+th.sort-desc::after {
+    content: ' \25BC'; /* Down arrow */
+    opacity: 1;
+   /* border-top-color: white; */
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+tr:hover {
+    background-color: #e9e9e9; /* Hover effect for rows */
+}
+.selected-row {
+    background-color: #cce5ff !important; /* Highlight selected row */
+    font-weight: bold;
+}
+.university-details {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    background-color: white;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+.university-details h2 {
+    margin-top: 0;
+    color: #333;
+}
+.university-details p {
+    line-height: 1.6;
+}
+.university-details img {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 10px;
+    display: none; /* Still hidden by default */
+}
+.university-details a {
+    color: #007bff;
+    text-decoration: none;
+}
+.university-details a:hover {
+    text-decoration: underline;
+}
+.cost-breakdown {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+.cost-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+.total-cost {
+    font-weight: bold;
+    border-top: 1px solid #ddd;
+    padding-top: 5px;
+    margin-top: 5px;
+}
+#generalResources {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #eef;
+    border: 1px solid #ccd;
+    border-radius: 5px;
+}
+#generalResources h2 {
+    margin-top: 0;
+    color: #336;
+}
+
+/* Add min-width for specific columns to prevent excessive cramping */
+#universityTable th:nth-child(6),
+#universityTable td:nth-child(6) { /* Demographics */
+    min-width: 200px; /* Adjust as needed */
+}
+
+#universityTable th:nth-child(7),
+#universityTable td:nth-child(7) { /* Avg Class Size/Ratio */
+    min-width: 120px; /* Adjust as needed */
+}
+
+/* --- Table Container for Sticky Positioning --- */
+.table-container {
+    max-height: 600px; /* Adjust height as needed, or use vh units */
+    overflow: auto; /* Enable scrolling for the container */
+    position: relative; /* Needed for sticky positioning context */
+}
+
+/* --- Sticky Header and Column --- */
+
+/* Make the table header sticky */
+#universityTable thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2; /* Ensure header is above the first column corner */
+    /* Background color is already set in the general 'th' rule */
+}
+
+/* Make the first column sticky */
+#universityTable tbody th:first-child, /* If using th in tbody */
+#universityTable tbody td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: white; /* Default background for first column cells */
+    z-index: 1; /* Ensure first column is above normal cells but below header corner */
+}
+
+/* Ensure the first column cells in even rows match their row background */
+#universityTable tbody tr:nth-child(even) td:first-child {
+    background-color: #f2f2f2;
+}
+
+/* Style the top-left corner cell (first header cell) */
+#universityTable thead th:first-child {
+    left: 0;
+    z-index: 3; /* Ensure top-left corner is above everything */
+}

@@ -7,6 +7,7 @@ let currentSortDirection = 'asc'; // 'asc' or 'desc'
 const tableBody = document.querySelector("#universityTable tbody");
 const tableHead = document.querySelector("#universityTable thead");
 const detailsDiv = document.getElementById("universityDetails");
+const sortableColumns = [0, 1, 2, 3]; // Define sortable columns once
 
 // --- CSV Parsing Function ---
 // Basic CSV parser, handles quoted fields containing commas.
@@ -20,16 +21,32 @@ function parseCSV(csvText) {
         let inQuotes = false;
         for (let i = 0; i < line.length; i++) {
             const char = line[i];
-            // Handle quotes: toggle inQuotes state if the quote is not escaped
-            if (char === '"' && (i === 0 || line[i-1] !== '\\')) { // Basic quote handling
-                 inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
-                // If comma is encountered outside quotes, push the value and reset
-                values.push(currentVal.trim().replace(/^"|"$/g, '')); // Remove surrounding quotes if any
-                currentVal = '';
+
+            if (inQuotes) {
+                // Check for escaped quote ("")
+                if (char === '"' && i + 1 < line.length && line[i+1] === '"') {
+                    currentVal += '"'; // Add one quote to the value
+                    i++; // Skip the next quote
+                } else if (char === '"') {
+                    // End of quoted field
+                    inQuotes = false;
+                } else {
+                    // Character inside quoted field
+                    currentVal += char;
+                }
             } else {
-                // Append character to current value (handle escaped quotes if needed)
-                 currentVal += char; // Simplification: doesn't handle escaped quotes within fields
+                // Outside quotes
+                if (char === '"') {
+                    // Start of quoted field
+                    inQuotes = true;
+                } else if (char === ',') {
+                    // End of field
+                    values.push(currentVal.trim()); // Keep surrounding quotes if they were part of the data
+                    currentVal = '';
+                } else {
+                    // Regular character
+                    currentVal += char;
+                }
             }
         }
         values.push(currentVal.trim().replace(/^"|"$/g, '')); // Add the last value
@@ -455,8 +472,7 @@ function updateHeaderSortIndicators() {
 
 // Add event listeners to table headers for sorting
 tableHead.querySelectorAll('th').forEach((th, index) => {
-    // Only add listener to columns defined as sortable in updateHeaderSortIndicators
-    const sortableColumns = [0, 1, 2, 3]; // Must match the definition above
+    // Only add listener to columns defined as sortable (using the global definition)
     if (sortableColumns.includes(index)) {
         th.addEventListener('click', () => sortTable(index));
     }

@@ -140,7 +140,7 @@ tr:hover {
     position: sticky;
     top: 0;
     z-index: 2; /* Ensure header is above the first column corner */
-    /* Background color is already set in the general 'th' rule */
+    background-color: #4CAF50; /* Explicit background for sticky header */
 }
 
 /* Make the first column sticky */

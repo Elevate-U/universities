@@ -236,3 +236,29 @@ tr:hover {
     align-items: center; /* Vertically center items in the paragraph */
     flex-wrap: wrap; /* Allow wrapping if needed */
 }
+
+/* RMP Professor List Styling */
+.rmp-prof-list {
+    margin-top: 5px; /* Add some space above the list */
+}
+.rmp-prof-list ul {
+    list-style: disc; /* Use standard bullets */
+    padding-left: 20px; /* Indent the list */
+    margin-top: 5px; /* Space between label and list */
+    margin-bottom: 10px;
+}
+.rmp-prof-list li {
+    margin-bottom: 5px; /* Space between list items */
+    line-height: 1.4; /* Adjust line height for readability */
+}
+
+/* Details Links List Styling */
+.details-links-list {
+    list-style: disc; /* Use standard bullets */
+    padding-left: 20px; /* Indent the list */
+    margin-top: 5px; /* Space between label and list */
+    margin-bottom: 10px;
+}
+.details-links-list li {
+    margin-bottom: 5px; /* Space between list items */
+}

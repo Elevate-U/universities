@@ -64,10 +64,12 @@ function parseCSV(csvText) {
         "Tuition": "tuition",
         "TuitionDisplay": "tuitionDisplay",
         "ProgramLength": "programLength",
+        "FAFSA Code": "fafsaCode", // Added FAFSA Code mapping
         "Location": "location",
         "TransitionInfo": "transitionInfo",
         "Website": "website",
         "CostBreakdown": "costBreakdown",
+        "Links": "linksJson", // Added Links mapping
         "TotalPopulation": "totalPopulation",
         "Demographics": "demographics",
         "AvgClassSize": "avgClassSize",
@@ -383,21 +385,25 @@ function displayDetails(university) {
     let detailsHTML = `
         <div class="university-details">
             <h2>${university.name || 'N/A'}</h2>
+            <h3>University Info</h3>
             <p><strong>Location:</strong> ${university.location || 'N/A'}</p>
+            <h3>Program Details</h3>
             <p><strong>Program Length:</strong> ${university.programLength || 'N/A'}</p>
             <p><strong>Scholarship Amount:</strong> ${university.scholarship || 'N/A'}</p>
             <p><strong>Estimated Annual Tuition:</strong> ${tuitionDisplayText}</p>
             <p><strong>Estimated Net Cost:</strong> ${netCostText}</p>
+            <h3>Student Body</h3>
             <p><strong>Total Population:</strong> ${university.totalPopulation || 'N/A'}</p>
             <p><strong>Demographics:</strong> ${university.demographics || 'N/A'}</p>
             <p><strong>Avg Class Size/Ratio:</strong> ${university.avgClassSize || 'N/A'}</p>
             <p><strong>PT Class Size:</strong> ${university.ptClassSize || 'N/A'}</p>
-            <h3>Rate My Professors Info:</h3>
+            <h3>Rate My Professors Info</h3>
             ${generateRmpScoreHtml(university.rmpScore, university.rmpLink)}
             <p><strong>School Summary:</strong> ${university.rmpSummary || 'N/A'}</p>
-            <p><strong>PT/Related Professors:</strong> ${university.rmpPtProfs || 'N/A'}</p>
+            <div class="rmp-prof-list"><strong>PT/Related Professors:</strong> ${formatProfessorList(university.rmpPtProfs)}</div>
             <p><strong>First Year Recs:</strong> ${university.rmpFirstYearRecs || 'N/A'}</p>
     `;
+            // RMP section already has H3
 
     // Handle Cost Breakdown - Check if it looks like HTML or needs simple formatting
     if (university.costBreakdown) {
@@ -421,13 +427,102 @@ function displayDetails(university) {
         }
     }
 
+    // --- Add Categorized Links ---
+    detailsHTML += `<h3>Helpful Links:</h3>`;
+    try {
+        const links = JSON.parse(university.linksJson || '{}');
+        if (Object.keys(links).length > 0) {
+            detailsHTML += `<ul class="details-links-list">`;
+            for (const key in links) {
+                // Convert camelCase key to Title Case for display
+                const titleCaseKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                detailsHTML += `<li><a href="${links[key]}" target="_blank">${titleCaseKey}</a></li>`;
+            }
+            detailsHTML += `</ul>`;
+        } else {
+            detailsHTML += `<p>No specific links available.</p>`;
+        }
+    } catch (e) {
+        console.error("Error parsing links JSON for", university.name, e);
+        detailsHTML += `<p>Error loading links.</p>`;
+    }
+    // --- End Categorized Links ---
+
     detailsHTML += `
+            <p><strong>FAFSA Code:</strong> ${university.fafsaCode || 'N/A'}</p>
             <p><strong>Transition Info:</strong> ${university.transitionInfo || 'N/A'}</p>
-            ${university.website ? `<p><a href="${university.website}" target="_blank">Visit University Website</a></p>` : ''}
+            ${university.website ? `<p><a href="${university.website}" target="_blank">Visit Main University Website</a></p>` : ''}
         </div>
     `;
 
     detailsDiv.innerHTML = detailsHTML;
+}
+
+// --- Helper function to format professor list ---
+function formatProfessorList(profString) {
+    if (!profString || profString === 'N/A' || profString === 'None found on RMP.' || profString === 'Data unavailable due to RMP scrape failure.') {
+        return ' N/A'; // Add space for alignment if no data
+    }
+
+    const profs = profString.split(';');
+    let htmlList = '<ul>';
+
+    profs.forEach(prof => {
+        prof = prof.trim();
+        if (prof) {
+            let name = prof; // Default to full string
+            let ratingInfo = '';
+            let link = null;
+            let snippet = '';
+
+            // 1. Try to extract URL
+            const urlMatch = prof.match(/https?:\/\/[^\s\)]+/);
+            if (urlMatch) {
+                link = urlMatch[0];
+                // Remove URL from string to simplify further parsing
+                prof = prof.replace(link, '').replace(/,\s+\):?/, '):'); // Clean up trailing comma/space before closing paren
+            }
+
+            // 2. Try to extract Name (everything before the first '(' )
+            const nameMatch = prof.match(/^([^(]+)/);
+            if (nameMatch) {
+                name = nameMatch[1].trim();
+            }
+
+            // 3. Try to extract Rating Info (inside parentheses)
+            const ratingMatch = prof.match(/\(([^)]+)\)/);
+            if (ratingMatch) {
+                ratingInfo = ratingMatch[1].trim();
+                // Clean up name if rating info was successfully extracted
+                name = prof.substring(0, prof.indexOf('(')).trim();
+            }
+
+             // 4. Try to extract Snippet (after colon, if any)
+             const snippetMatch = prof.match(/:\s*(.*)$/);
+             if (snippetMatch) {
+                 snippet = `: ${snippetMatch[1].trim()}`;
+                 // Clean up ratingInfo if snippet was found after colon
+                 if (ratingInfo && ratingInfo.includes(':')) {
+                    ratingInfo = ratingInfo.substring(0, ratingInfo.indexOf(':')).trim();
+                 }
+             }
+
+
+            // 5. Construct list item
+            let linkHtml = link ? ` (<a href="${link}" target="_blank">RMP</a>)` : '';
+            let ratingHtml = ratingInfo ? ` (${ratingInfo})` : '';
+
+            // Ensure we don't render the raw URL if parsing failed badly
+            if (name.includes('http')) {
+                 console.error("Failed to properly parse name, potential raw URL:", name, "Original:", profString);
+                 htmlList += `<li>Error parsing professor data</li>`;
+            } else {
+                 htmlList += `<li>${name}${ratingHtml}${linkHtml}${snippet}</li>`;
+            }
+        }
+    });
+    htmlList += '</ul>';
+    return htmlList;
 }
 
 // --- Sorting Functions ---

@@ -273,7 +273,12 @@ function generateRmpScoreHtml(rmpScore, rmpLink) {
     const maxScore = 5.0; // Assuming RMP max score is 5.0
     let scoreText = rmpScore || 'N/A';
     let barPercent = 0;
-    let linkHtml = rmpLink && rmpLink !== 'N/A' ? ` (<a href="${rmpLink}" target="_blank">Link</a>)` : '';
+    let linkHtml = '';
+    console.log(`generateRmpScoreHtml: Received rmpLink: "${rmpLink}"`); // <-- ADDED LOG
+    if (rmpLink && rmpLink !== 'N/A') {
+        console.log(`generateRmpScoreHtml: Creating link with href: "${rmpLink}"`); // <-- ADDED LOG
+        linkHtml = ` (<a href="${rmpLink}" target="_blank">Link</a>)`;
+    }
 
     if (!isNaN(scoreValue)) {
         barPercent = Math.max(0, Math.min(100, (scoreValue / maxScore) * 100));
@@ -509,7 +514,12 @@ function formatProfessorList(profString) {
 
 
             // 5. Construct list item
-            let linkHtml = link ? ` (<a href="${link}" target="_blank">RMP</a>)` : '';
+            let linkHtml = '';
+            console.log(`formatProfessorList: Extracted link: "${link}" for prof string: "${prof}"`); // <-- ADDED LOG
+            if (link) {
+                 console.log(`formatProfessorList: Creating link with href: "${link}"`); // <-- ADDED LOG
+                 linkHtml = ` (<a href="${link}" target="_blank">RMP</a>)`;
+            }
             let ratingHtml = ratingInfo ? ` (${ratingInfo})` : '';
 
             // Ensure we don't render the raw URL if parsing failed badly

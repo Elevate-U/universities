@@ -205,3 +205,34 @@ tr:hover {
     border-radius: 4px;
     transition: width 0.3s ease-in-out; /* Optional: Animate width changes */
 }
+
+/* --- RMP Score Bar Styles (in Details View) --- */
+.rmp-score-value {
+    display: inline-block; /* Keep score text inline */
+    margin-right: 5px; /* Space between score text and link/bar */
+}
+
+.rmp-score-bar-container {
+    display: inline-block; /* Allow bar to sit alongside text/link */
+    vertical-align: middle; /* Align bar vertically with text */
+    width: 100px; /* Fixed width for the bar container */
+    height: 10px; /* Height of the bar track */
+    background-color: #e0e0e0; /* Light grey background for the track */
+    border-radius: 5px;
+    overflow: hidden; /* Ensure bar stays within container bounds */
+    margin-left: 5px; /* Space before the bar */
+}
+
+.rmp-score-bar {
+    height: 100%;
+    background-color: #ffc107; /* Yellow/Orange color for RMP score */
+    border-radius: 5px;
+    transition: width 0.3s ease-in-out; /* Optional: Animate width changes */
+}
+
+/* Adjust spacing for the paragraph containing the RMP score */
+.university-details p:has(.rmp-score-bar-container) {
+    display: flex; /* Use flexbox for better alignment */
+    align-items: center; /* Vertically center items in the paragraph */
+    flex-wrap: wrap; /* Allow wrapping if needed */
+}

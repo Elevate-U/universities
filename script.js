@@ -265,6 +265,31 @@ function formatNetCost(netCost, universityName) {
      return formatted;
 }
 
+// --- RMP Score Bar Generation ---
+function generateRmpScoreHtml(rmpScore, rmpLink) {
+    const scoreValue = parseFloat(rmpScore);
+    const maxScore = 5.0; // Assuming RMP max score is 5.0
+    let scoreText = rmpScore || 'N/A';
+    let barPercent = 0;
+    let linkHtml = rmpLink && rmpLink !== 'N/A' ? ` (<a href="${rmpLink}" target="_blank">Link</a>)` : '';
+
+    if (!isNaN(scoreValue)) {
+        barPercent = Math.max(0, Math.min(100, (scoreValue / maxScore) * 100));
+        scoreText = `${scoreValue.toFixed(1)} / ${maxScore.toFixed(1)}`; // Display as X.X / 5.0
+    } else {
+        scoreText = 'N/A'; // Ensure consistent N/A display
+    }
+
+    return `
+        <p><strong>Overall Score:</strong>
+            <span class="rmp-score-value">${scoreText}</span>${linkHtml}
+            <div class="rmp-score-bar-container" title="RMP Score: ${scoreText}">
+                <div class="rmp-score-bar" style="width: ${barPercent.toFixed(2)}%;" aria-valuenow="${scoreValue}" aria-valuemin="0" aria-valuemax="${maxScore}" role="progressbar"></div>
+            </div>
+        </p>
+    `;
+}
+
 
 // --- Table Population Function ---
 function populateTable(data, minCost, costRange) { // Added minCost, costRange params
@@ -368,7 +393,7 @@ function displayDetails(university) {
             <p><strong>Avg Class Size/Ratio:</strong> ${university.avgClassSize || 'N/A'}</p>
             <p><strong>PT Class Size:</strong> ${university.ptClassSize || 'N/A'}</p>
             <h3>Rate My Professors Info:</h3>
-            <p><strong>Overall Score:</strong> ${university.rmpScore || 'N/A'} ${university.rmpLink && university.rmpLink !== 'N/A' ? `(<a href="${university.rmpLink}" target="_blank">Link</a>)` : ''}</p>
+            ${generateRmpScoreHtml(university.rmpScore, university.rmpLink)}
             <p><strong>School Summary:</strong> ${university.rmpSummary || 'N/A'}</p>
             <p><strong>PT/Related Professors:</strong> ${university.rmpPtProfs || 'N/A'}</p>
             <p><strong>First Year Recs:</strong> ${university.rmpFirstYearRecs || 'N/A'}</p>

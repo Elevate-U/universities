@@ -365,6 +365,7 @@ function populateTable(data, minCost, costRange) { // Added minCost, costRange p
         row.addEventListener("click", () => {
             // Retrieve the university data stored on the row
             const clickedUniversity = JSON.parse(row.dataset.university);
+            console.log("Row clicked. University data:", clickedUniversity); // <-- ADDED LOG
             displayDetails(clickedUniversity);
             // Highlight selected row
             if (currentlySelectedRow) {
@@ -435,7 +436,9 @@ function displayDetails(university) {
     // --- Add Categorized Links ---
     detailsHTML += `<h3>Helpful Links:</h3>`;
     try {
+        console.log(`displayDetails: Received linksJson: "${university.linksJson}"`); // <-- ADDED LOG
         const links = JSON.parse(university.linksJson || '{}');
+        console.log(`displayDetails: Parsed links object:`, links); // <-- ADDED LOG
         if (Object.keys(links).length > 0) {
             detailsHTML += `<ul class="details-links-list">`;
             for (const key in links) {
@@ -456,7 +459,7 @@ function displayDetails(university) {
     detailsHTML += `
             <p><strong>FAFSA Code:</strong> ${university.fafsaCode || 'N/A'}</p>
             <p><strong>Transition Info:</strong> ${university.transitionInfo || 'N/A'}</p>
-            ${university.website ? `<p><a href="${university.website}" target="_blank">Visit Main University Website</a></p>` : ''}
+            ${university.website ? (console.log(`displayDetails: Using university.website for link: "${university.website}"`), `<p><a href="${university.website}" target="_blank">Visit Main University Website</a></p>`) : ''}
         </div>
     `;
 

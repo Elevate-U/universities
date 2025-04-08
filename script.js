@@ -3,6 +3,8 @@ let universities = [];
 let currentlySelectedRow = null;
 let currentSortColumn = null;
 let currentSortDirection = 'asc'; // 'asc' or 'desc'
+let globalMinCost = 0; // Global variable for min cost
+let globalCostRange = 0; // Global variable for cost range
 
 const tableBody = document.querySelector("#universityTable tbody");
 const tableHead = document.querySelector("#universityTable thead");
@@ -18,30 +20,51 @@ function parseCSV(csvText) {
     const parseLine = (line) => {
         const values = [];
         let currentVal = '';
-        let inQuotes = false;
+        let inQuotes = false; // Tracks if inside standard quotes (")
+        let inTripleQuotes = false; // Tracks if inside triple quotes (""")
+
         for (let i = 0; i < line.length; i++) {
             const char = line[i];
+            const nextTwo = line.substring(i + 1, i + 3); // Look ahead for triple quotes
 
-            if (inQuotes) {
-                // Check for escaped quote ("")
-                if (char === '"' && i + 1 < line.length && line[i+1] === '"') {
-                    currentVal += '"'; // Add one quote to the value
-                    i++; // Skip the next quote
-                } else if (char === '"') {
-                    // End of quoted field
-                    inQuotes = false;
+            if (inTripleQuotes) {
+                // Check for end of triple-quoted field (""")
+                if (char === '"' && nextTwo === '""') {
+                    inTripleQuotes = false;
+                    i += 2; // Skip the next two quotes
+                }
+                // Check for escaped standard quote ("") inside triple quotes
+                else if (char === '"' && i + 1 < line.length && line[i+1] === '"') {
+                     currentVal += '"';
+                     i++; // Skip the next quote
                 } else {
-                    // Character inside quoted field
+                    currentVal += char;
+                }
+            } else if (inQuotes) {
+                // Check for end of standard quoted field (")
+                if (char === '"') {
+                    // Check for escaped quote ("")
+                    if (i + 1 < line.length && line[i+1] === '"') {
+                        currentVal += '"';
+                        i++; // Skip the next quote
+                    } else {
+                        inQuotes = false; // End of standard quoted field
+                    }
+                } else {
                     currentVal += char;
                 }
             } else {
-                // Outside quotes
-                if (char === '"') {
-                    // Start of quoted field
+                // Outside any quotes
+                if (char === '"' && nextTwo === '""') {
+                    // Start of triple-quoted field
+                    inTripleQuotes = true;
+                    i += 2; // Skip the next two quotes
+                } else if (char === '"') {
+                    // Start of standard quoted field
                     inQuotes = true;
                 } else if (char === ',') {
                     // End of field
-                    values.push(currentVal.trim()); // Keep surrounding quotes if they were part of the data
+                    values.push(currentVal.trim()); // Keep value as is for now
                     currentVal = '';
                 } else {
                     // Regular character
@@ -49,8 +72,17 @@ function parseCSV(csvText) {
                 }
             }
         }
-        values.push(currentVal.trim().replace(/^"|"$/g, '')); // Add the last value
-        return values;
+        values.push(currentVal.trim()); // Add the last value
+
+        // Clean up surrounding quotes after parsing the line
+        return values.map(val => {
+            if (val.startsWith('"""') && val.endsWith('"""')) {
+                return val.substring(3, val.length - 3).replace(/""/g, '"'); // Remove triple quotes and unescape internal ""
+            } else if (val.startsWith('"') && val.endsWith('"')) {
+                return val.substring(1, val.length - 1).replace(/""/g, '"'); // Remove standard quotes and unescape internal ""
+            }
+            return val; // Return as is if not quoted
+        });
     };
 
     const headers = parseLine(lines[0]).map(h => h.trim()); // Trim headers
@@ -64,21 +96,31 @@ function parseCSV(csvText) {
         "Tuition": "tuition",
         "TuitionDisplay": "tuitionDisplay",
         "ProgramLength": "programLength",
-        "FAFSA Code": "fafsaCode", // Added FAFSA Code mapping
+        "FAFSA Code": "fafsaCode",
         "Location": "location",
         "TransitionInfo": "transitionInfo",
         "Website": "website",
         "CostBreakdown": "costBreakdown",
-        "Links": "linksJson", // Added Links mapping
+        "Links": "linksJson",
         "TotalPopulation": "totalPopulation",
         "Demographics": "demographics",
         "AvgClassSize": "avgClassSize",
         "PTClassSize": "ptClassSize",
         "RMP_Score": "rmpScore",
         "RMP_Link": "rmpLink",
-        "RMP_Summary": "rmpSummary",
+        "RMP_Summary": "rmpSummary", // Re-added mapping for existing column
+        "RMP_Positive_Reviews": "rmpPositive", // Added positive reviews mapping
+        "RMP_Negative_Reviews": "rmpNegative", // Added negative reviews mapping
         "RMP_PT_Profs": "rmpPtProfs",
-        "RMP_FirstYear_Recs": "rmpFirstYearRecs"
+        "RMP_FirstYear_Recs": "rmpFirstYearRecs",
+        // New Transportation Columns
+        "PublicTransitInfo": "publicTransitInfo",
+        "DrivingParkingInfo": "drivingParkingInfo",
+        "CyclingInfo": "cyclingInfo",
+        "WalkingInfo": "walkingInfo",
+        "RideShareTaxiInfo": "rideShareTaxiInfo",
+        "AirportAccessInfo": "airportAccessInfo",
+        "CampusShuttleInfo": "campusShuttleInfo"
     };
 
     // Find the index for each required header
@@ -88,9 +130,13 @@ function parseCSV(csvText) {
         if (index !== -1) {
             indices[headerMap[csvHeader]] = index;
         } else {
-            console.warn(`CSV Header "${csvHeader}" not found.`);
+             // Only warn if the header is expected based on the map keys
+             if (headerMap.hasOwnProperty(csvHeader)) {
+                 console.warn(`CSV Header "${csvHeader}" not found.`);
+             }
         }
     });
+    // console.log("CSV Header Indices Found:", indices); // Log found indices - REMOVED
 
     for (let i = 1; i < lines.length; i++) {
         if (lines[i].trim() === '') continue; // Skip empty lines
@@ -123,7 +169,7 @@ async function loadAndDisplayData() {
 
         if (universities.length === 0) {
              console.warn("CSV parsing resulted in empty data array.");
-             tableBody.innerHTML = `<tr><td colspan="8">No data loaded from CSV. Check file format and content.</td></tr>`; // Adjust colspan
+             tableBody.innerHTML = `<tr><td colspan="8">No data loaded from CSV. Check file format and content.</td></tr>`; // Main table colspan remains 8
              return;
         }
 
@@ -143,9 +189,12 @@ async function loadAndDisplayData() {
             maxCost = 0;
         }
         const costRange = maxCost - minCost;
+        // Store globally
+        globalMinCost = minCost;
+        globalCostRange = costRange;
         // --- End Min/Max Calculation ---
 
-        populateTable(universities, minCost, costRange); // Pass minCost and costRange
+        populateTable(universities, globalMinCost, globalCostRange); // Use global values
         updateHeaderSortIndicators(); // Update sort indicators
         // Clear details and selection when data reloads initially
         detailsDiv.innerHTML = '';
@@ -156,7 +205,7 @@ async function loadAndDisplayData() {
     } catch (error) {
         console.error("Error loading or parsing CSV:", error);
         // Display error in the table body
-        tableBody.innerHTML = `<tr><td colspan="8">Error loading data. Please check console and CSV file. (${error.message})</td></tr>`; // Adjust colspan
+        tableBody.innerHTML = `<tr><td colspan="8">Error loading data. Please check console and CSV file. (${error.message})</td></tr>`; // Main table colspan remains 8
     }
 }
 
@@ -274,9 +323,9 @@ function generateRmpScoreHtml(rmpScore, rmpLink) {
     let scoreText = rmpScore || 'N/A';
     let barPercent = 0;
     let linkHtml = '';
-    console.log(`generateRmpScoreHtml: Received rmpLink: "${rmpLink}"`); // <-- ADDED LOG
+    // console.log(`generateRmpScoreHtml: Received rmpLink: "${rmpLink}"`); // Debug log
     if (rmpLink && rmpLink !== 'N/A') {
-        console.log(`generateRmpScoreHtml: Creating link with href: "${rmpLink}"`); // <-- ADDED LOG
+        // console.log(`generateRmpScoreHtml: Creating link with href: "${rmpLink}"`); // Debug log
         linkHtml = ` (<a href="${rmpLink}" target="_blank">Link</a>)`;
     }
 
@@ -365,7 +414,7 @@ function populateTable(data, minCost, costRange) { // Added minCost, costRange p
         row.addEventListener("click", () => {
             // Retrieve the university data stored on the row
             const clickedUniversity = JSON.parse(row.dataset.university);
-            console.log("Row clicked. University data:", clickedUniversity); // <-- ADDED LOG
+            // console.log("Row clicked. University data:", clickedUniversity); // Debug log
             displayDetails(clickedUniversity);
             // Highlight selected row
             if (currentlySelectedRow) {
@@ -376,9 +425,345 @@ function populateTable(data, minCost, costRange) { // Added minCost, costRange p
         });
     });
 }
+// --- Entity Map and Hyperlinking Helper ---
+const entityUrlMap = {
+    // Cities / Locations
+    "Chicago": "https://en.wikipedia.org/wiki/Chicago",
+    "Flint, MI": "https://en.wikipedia.org/wiki/Flint,_Michigan",
+    "Flint": "https://en.wikipedia.org/wiki/Flint,_Michigan", // Alias
+    "Dallas, TX": "https://en.wikipedia.org/wiki/Dallas",
+    "Dallas": "https://en.wikipedia.org/wiki/Dallas", // Alias
+    "Ithaca, NY": "https://en.wikipedia.org/wiki/Ithaca,_New_York",
+    "Ithaca": "https://en.wikipedia.org/wiki/Ithaca,_New_York", // Alias
+    "West Hartford, CT": "https://en.wikipedia.org/wiki/West_Hartford,_Connecticut",
+    "Saint Louis, MO": "https://en.wikipedia.org/wiki/St._Louis",
+    "St. Louis": "https://en.wikipedia.org/wiki/St._Louis", // Alias
+    "STL": "https://en.wikipedia.org/wiki/St._Louis", // Alias
+    "Pittsburgh, PA": "https://en.wikipedia.org/wiki/Pittsburgh",
+    // "Pittsburgh": "https://en.wikipedia.org/wiki/Pittsburgh", // Alias - Removed due to causing nested link issue
+    "Chester, PA": "https://en.wikipedia.org/wiki/Chester,_Pennsylvania",
+    "Chester": "https://en.wikipedia.org/wiki/Chester,_Pennsylvania", // Alias
+    "Philadelphia": "https://en.wikipedia.org/wiki/Philadelphia",
+    "Spokane, WA": "https://en.wikipedia.org/wiki/Spokane,_Washington",
+    "Spokane": "https://en.wikipedia.org/wiki/Spokane,_Washington", // Alias
+    "Albuquerque, NM": "https://en.wikipedia.org/wiki/Albuquerque,_New_Mexico",
+    "Albuquerque": "https://en.wikipedia.org/wiki/Albuquerque,_New_Mexico", // Alias
+    "Amherst, NY": "https://en.wikipedia.org/wiki/Amherst,_New_York",
+    "Buffalo": "https://en.wikipedia.org/wiki/Buffalo,_New_York", // Alias
+    "Waco, TX": "https://en.wikipedia.org/wiki/Waco,_Texas",
+    // "Waco": "https://en.wikipedia.org/wiki/Waco,_Texas", // Alias - Removed due to causing nested link issue
+    "Lincoln Park": "https://en.wikipedia.org/wiki/Lincoln_Park,_Chicago",
+    "Loop": "https://en.wikipedia.org/wiki/Chicago_Loop",
+    // Universities (Mainly for context, already linked elsewhere)
+    "DePaul University": "https://www.depaul.edu/",
+    "University of Illinois Chicago": "https://www.uic.edu/",
+    "UIC": "https://www.uic.edu/",
+    "University of Michigan-Flint": "https://www.umflint.edu/",
+    "UM-Flint": "https://www.umflint.edu/",
+    "University of Texas at Dallas": "https://www.utdallas.edu/",
+    "UTD": "https://www.utdallas.edu/",
+    "UT Southwestern": "https://www.utsouthwestern.edu/",
+    "Ithaca College": "https://www.ithaca.edu/",
+    "University of Hartford": "https://www.hartford.edu/",
+    "UHart": "https://www.hartford.edu/",
+    "Saint Louis University": "https://www.slu.edu/",
+    "SLU": "https://www.slu.edu/",
+    "Duquesne University": "https://www.duq.edu/",
+    "Duquesne": "https://www.duq.edu/",
+    "Widener University": "https://www.widener.edu/",
+    "Widener": "https://www.widener.edu/",
+    "Gonzaga University": "https://www.gonzaga.edu/",
+    "Gonzaga": "https://www.gonzaga.edu/",
+    "University of New Mexico": "https://www.unm.edu/",
+    "UNM": "https://www.unm.edu/",
+    "Daemen University": "https://www.daemen.edu/",
+    "Daemen": "https://www.daemen.edu/",
+    "Baylor University": "https://www.baylor.edu/",
+    "Baylor": "https://www.baylor.edu/",
+    // Transit Agencies & Systems
+    "CTA": "https://www.transitchicago.com/",
+    "Chicago Transit Authority": "https://www.transitchicago.com/",
+    "Metra": "https://metra.com/",
+    "MTA": "https://www.mtaflint.org/", // Assuming Flint MTA contextually
+    "Mass Transportation Authority": "https://www.mtaflint.org/", // Flint
+    "DART": "https://www.dart.org/", // Dallas
+    "Dallas Area Rapid Transit": "https://www.dart.org/",
+    "TRE": "https://trinityrailwayexpress.org/",
+    "TCAT": "https://tcatbus.com/",
+    "Tompkins Consolidated Area Transit": "https://tcatbus.com/",
+    "CTtransit": "https://www.cttransit.com/",
+    "Metro Transit St. Louis": "https://www.metrostlouis.org/",
+    "MetroLink": "https://www.metrostlouis.org/metrolink/", // St Louis Light Rail
+    "MetroBus": "https://www.metrostlouis.org/metrobus/", // St Louis Bus
+    "PRT": "https://www.rideprt.org/", // Pittsburgh
+    "Pittsburgh Regional Transit": "https://www.rideprt.org/",
+    "SEPTA": "https://www.septa.org/",
+    "STA": "https://www.spokanetransit.com/", // Spokane
+    "Spokane Transit Authority": "https://www.spokanetransit.com/",
+    "ABQ RIDE": "https://www.cabq.gov/transit",
+    "NFTA Metro": "https://metro.nfta.com/", // Buffalo/Niagara
+    "Waco Transit System": "https://www.waco-texas.com/Departments/Transit-System",
+    // Specific Services/Passes
+    "U-Pass": "https://www.transitchicago.com/upass/", // Default to CTA, context might refine
+    "U-Pass CT": "https://ctrides.com/u-pass-ct/",
+    "Ventra card": "https://www.ventrachicago.com/",
+    "Divvy": "https://divvybikes.com/",
+    "SpotHero": "https://spothero.com/",
+    "Campus Connect": "https://campusconnect.depaul.edu/", // DePaul Portal
+    "Night Ride": "https://transportation.uic.edu/night-ride/", // UIC
+    "Your Ride": "https://www.mtaflint.org/your-ride/", // Flint Paratransit
+    "Campus Safe Ride": "https://www.umflint.edu/safety/safe-ride/", // UM-Flint
+    "TransLoc": "https://transloc.com/",
+    "Comet Cruiser": "https://services.utdallas.edu/transit/cruiser/", // UTD
+    "Comet Cab": "https://services.utdallas.edu/transit/cab/", // UTD
+    "Zipcar": "https://www.zipcar.com/",
+    "Tfare": "https://tcatbus.com/ride/real-time-information-apps/apps/", // Ithaca App
+    "ParkMobile": "https://parkmobile.io/",
+    "Ithaca Carshare": "https://ithacacarshare.org/",
+    "OurBus": "https://www.ourbus.com/",
+    "30-Bradley Flyer": "https://www.cttransit.com/services/bradley-flyer",
+    "Billiken Shuttle": "https://www.slu.edu/parking/on-campus-transportation/shuttle-services.php", // SLU
+    "SLU Ride": "https://www.slu.edu/parking/on-campus-transportation/slu-ride.php", // SLU
+    "ConnectCard": "https://www.connectcard.org/", // Pittsburgh
+    "POGOH": "https://pogoh.com/", // Pittsburgh Bike Share
+    "28X Airport Flyer": "https://www.rideprt.org/all-schedules/28X/", // Pittsburgh
+    "SEPTA Key": "https://www.septakey.org/",
+    "ZagCard": "https://www.gonzaga.edu/student-life/zagcard-services", // Gonzaga ID/Pass
+    "UNM LoboMobile": "https://appstore.unm.edu/app/lobomobile",
+    "Enterprise CarShare": "https://www.enterprisecarshare.com/",
+    "Collegiate Village": "https://www.collegiatevillagewny.com/", // Daemen Housing Partner
+    "Baylor University Shuttle": "https://dps.web.baylor.edu/parking-transportation/alternative-transportation/baylor-university-shuttle-bus-service", // BUS
+    "BUS": "https://dps.web.baylor.edu/parking-transportation/alternative-transportation/baylor-university-shuttle-bus-service", // Alias
+    "BUS Tracker App": "https://dps.web.baylor.edu/parking-transportation/alternative-transportation/baylor-university-shuttle-service/bus-tracker-app",
+    // Airports (Codes & Names)
+    "O'Hare (ORD)": "https://www.flychicago.com/ohare/home/pages/default.aspx",
+    "ORD": "https://www.flychicago.com/ohare/home/pages/default.aspx",
+    "Midway (MDW)": "https://www.flychicago.com/midway/home/pages/default.aspx",
+    "MDW": "https://www.flychicago.com/midway/home/pages/default.aspx",
+    "Bishop International Airport (FNT)": "https://www.bishopairport.org/",
+    "FNT": "https://www.bishopairport.org/",
+    "DFW": "https://www.dfwairport.com/",
+    "Dallas/Fort Worth": "https://www.dfwairport.com/",
+    "DAL": "https://www.dallas-lovefield.com/",
+    "Dallas Love Field": "https://www.dallas-lovefield.com/",
+    "ITH": "https://flyithaca.com/",
+    "Ithaca Tompkins": "https://flyithaca.com/",
+    "SYR": "https://syracuseairport.org/",
+    "Syracuse Hancock": "https://syracuseairport.org/",
+    "BDL": "https://bradleyairport.com/",
+    "Bradley International": "https://bradleyairport.com/",
+    "STL": "https://www.flystl.com/", // Airport Code & City Alias
+    "St. Louis Lambert International": "https://www.flystl.com/",
+    "PIT": "https://flypittsburgh.com/",
+    "Pittsburgh International": "https://flypittsburgh.com/",
+    "PHL": "https://www.phl.org/",
+    "Philadelphia International": "https://www.phl.org/",
+    "GEG": "https://spokaneairports.net/",
+    "Spokane International": "https://spokaneairports.net/",
+    "ABQ": "https://abqsunport.com/", // Airport Code & City Alias
+    "Albuquerque International Sunport": "https://abqsunport.com/",
+    "BUF": "https://www.buffaloairport.com/",
+    "Buffalo Niagara International": "https://www.buffaloairport.com/",
+    "ACT": "https://www.waco-texas.com/Departments/Aviation",
+    "Waco Regional": "https://www.waco-texas.com/Departments/Aviation",
+    "AUS": "https://www.austintexas.gov/airport",
+    "Austin-Bergstrom": "https://www.austintexas.gov/airport",
+    // Concepts / General Terms
+    "BS": "https://en.wikipedia.org/wiki/Bachelor_of_Science",
+    "RMP": "https://www.ratemyprofessors.com/",
+    "Rate My Professors": "https://www.ratemyprofessors.com/",
+    "CS": "https://en.wikipedia.org/wiki/Computer_science",
+    "STEM": "https://en.wikipedia.org/wiki/Science,_technology,_engineering,_and_mathematics",
+    "commuter school": "https://en.wikipedia.org/wiki/Commuter_campus",
+    "college town": "https://en.wikipedia.org/wiki/College_town",
+    "Greek life": "https://en.wikipedia.org/wiki/Fraternities_and_sororities",
+    "Co-op": "https://en.wikipedia.org/wiki/Cooperative_education",
+    "PA": "https://en.wikipedia.org/wiki/Physician_assistant", // Assuming context is Physician Assistant
+    "PTCAS": "https://www.ptcas.org/home.aspx",
+    "EV Charging": "https://en.wikipedia.org/wiki/Charging_station",
+    "Amtrak": "https://www.amtrak.com/",
+    "Greyhound": "https://www.greyhound.com/",
+    // Add more entities as needed...
+};
+
+// Helper to escape regex special characters in entity names
+function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
+// --- REVISED addHyperlinks Function ---
+function addHyperlinks(text, linkedEntities = new Set()) {
+    if (!text || typeof text !== 'string') return text;
+
+    const matches = [];
+    // Sort keys by length descending to match longer phrases first
+    const sortedKeys = Object.keys(entityUrlMap).sort((a, b) => b.length - a.length);
+
+    // Find all potential matches
+    sortedKeys.forEach(entity => {
+        const url = entityUrlMap[entity];
+        // Regex to find the entity, ensuring it's a whole word (\b)
+        // We'll check for existing links later
+        const regex = new RegExp(`\\b(${escapeRegex(entity)})\\b`, 'gi'); // Global and case-insensitive
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+            matches.push({
+                start: match.index,
+                end: regex.lastIndex,
+                entity: match[1], // The actual matched text (respecting case)
+                linkHtml: `<a href="${url}" target="_blank">${match[1]}</a>`,
+                entityKey: entity // Original key from map for tracking
+            });
+        }
+    });
+
+    // Sort matches by start index, then by length descending (for overlapping cases)
+    matches.sort((a, b) => {
+        if (a.start !== b.start) {
+            return a.start - b.start;
+        }
+        return b.end - a.end; // Longer match first if starts at same index
+    });
+
+    let result = '';
+    let lastIndex = 0;
+    const processedIndices = new Set(); // Track ranges already processed
+
+    matches.forEach(match => {
+        // Check if this match overlaps with an already processed (longer) match
+        let overlaps = false;
+        for (let i = match.start; i < match.end; i++) {
+            if (processedIndices.has(i)) {
+                overlaps = true;
+                break;
+            }
+        }
+
+        // Check if this entity has already been linked (case-insensitive)
+        const entityAlreadyLinked = linkedEntities.has(match.entityKey.toLowerCase());
+
+        // Only process if it doesn't overlap and hasn't been linked yet
+        if (!overlaps && !entityAlreadyLinked) {
+            // Check if the match is inside an existing HTML tag (simple check)
+            const textBefore = text.substring(lastIndex, match.start);
+            const openTagMatch = textBefore.lastIndexOf('<');
+            const closeTagMatch = textBefore.lastIndexOf('>');
+            const isInsideTag = openTagMatch > closeTagMatch; // Basic check if we're inside a tag
+
+            if (!isInsideTag) {
+                // Append text before the match
+                result += text.substring(lastIndex, match.start);
+                // Append the link
+                result += match.linkHtml;
+                // Update lastIndex
+                lastIndex = match.end;
+                // Mark indices as processed
+                for (let i = match.start; i < match.end; i++) {
+                    processedIndices.add(i);
+                }
+                // Mark entity as linked
+                linkedEntities.add(match.entityKey.toLowerCase());
+            }
+        }
+    });
+
+    // Append any remaining text after the last match
+    result += text.substring(lastIndex);
+
+    return result;
+}
+
 
 // --- Details Display Function ---
+
+
+// Helper function to parse the semi-colon delimited key-value transportation data
+function parseTransportationData(dataString) {
+    const data = {};
+    if (!dataString || typeof dataString !== 'string') return data;
+
+    dataString.split(';').forEach(pair => {
+        const parts = pair.split(':');
+        if (parts.length >= 2) {
+            const key = parts[0].trim();
+            // Join remaining parts in case value contains ':'
+            const value = parts.slice(1).join(':').trim();
+            if (key && value) {
+                data[key] = value;
+            }
+        }
+    });
+    return data;
+}
+
+// Helper function to render transportation data as HTML (e.g., definition list)
+// Updated to use addHyperlinks for values and add icons
+function renderTransportationHTML(title, data, linkedEntities) { // Added linkedEntities param
+    // Add icon based on title first
+
+    // Add icon based on title first
+    let icon = getIconForTitle(title);
+
+    if (!data || Object.keys(data).length === 0) {
+        return `<div class="transport-category"><h3>${icon} ${title}</h3><p>N/A</p></div>`; // Include icon even for N/A
+    }
+
+    let html = `<div class="transport-category"><h3>${icon} ${title}</h3><dl>`; // Added icon to h3
+    for (const key in data) {
+        let originalValue = data[key];
+        let displayValue = originalValue;
+        let displayKey = key.replace(/([A-Z])/g, ' $1').trim();
+        let potentialUrl = originalValue;
+
+        // Check for potential domain names missing protocol
+        const looksLikeDomain = typeof originalValue === 'string' && originalValue.includes('.') && !originalValue.includes(' ');
+        if (looksLikeDomain && !(originalValue.startsWith('http://') || originalValue.startsWith('https://'))) {
+            potentialUrl = `https://${originalValue}`;
+        }
+
+        const isUrl = typeof potentialUrl === 'string' && (potentialUrl.startsWith('http://') || potentialUrl.startsWith('https://'));
+
+        if (isUrl) {
+            // If the key indicates it's a link type, create a descriptive link
+            if (key.toLowerCase().includes('link')) {
+                let linkType = key.replace(/Link$/i, '');
+                if (linkType === '') linkType = 'Source';
+                displayKey = `${linkType} Link`;
+                displayValue = `<a href="${potentialUrl}" target="_blank">Visit ${linkType}</a>`;
+                // Don't run addHyperlinks on the generated link text itself
+            } else {
+                // Otherwise, just link the URL itself
+                displayValue = `<a href="${potentialUrl}" target="_blank">${originalValue}</a>`;
+                // Don't run addHyperlinks on the URL text itself
+            }
+        } else {
+            // If it's not a URL, apply hyperlinking to the text content
+            displayValue = addHyperlinks(originalValue, linkedEntities); // Pass linkedEntities
+        }
+
+        html += `<dt>${displayKey}:</dt><dd>${displayValue}</dd>`;
+    }
+    html += `</dl></div>`;
+    return html;
+}
+
+// Helper function to get icon based on title
+function getIconForTitle(title) {
+    const lowerTitle = title.toLowerCase();
+    if (lowerTitle.includes('transit')) return '🚌';
+    if (lowerTitle.includes('driving') || lowerTitle.includes('parking')) return '🚗';
+    if (lowerTitle.includes('cycling')) return '🚲';
+    if (lowerTitle.includes('walking')) return '🚶';
+    if (lowerTitle.includes('ride') || lowerTitle.includes('taxi')) return '🚕';
+    if (lowerTitle.includes('airport')) return '✈️';
+    if (lowerTitle.includes('shuttle')) return '🚐';
+    return ''; // Default no icon
+}
+
 function displayDetails(university) {
+    // Keep track of entities linked within this specific details view
+    const linkedEntitiesInView = new Set();
+
     const netCost = calculateNetCost(university);
     const netCostText = formatNetCost(netCost, university.name);
 
@@ -387,14 +772,33 @@ function displayDetails(university) {
     const tuitionDisplayText = university.tuitionDisplay ? university.tuitionDisplay
         : (!isNaN(tuitionValue) ? `$${tuitionValue.toLocaleString()}` : (university.tuition || 'N/A'));
 
+    // Parse transportation data
+    const publicTransitData = parseTransportationData(university.publicTransitInfo);
+    const drivingParkingData = parseTransportationData(university.drivingParkingInfo);
+    const cyclingData = parseTransportationData(university.cyclingInfo);
+    const walkingData = parseTransportationData(university.walkingInfo);
+    const rideShareTaxiData = parseTransportationData(university.rideShareTaxiInfo);
+    const airportAccessData = parseTransportationData(university.airportAccessInfo);
+    const campusShuttleData = parseTransportationData(university.campusShuttleInfo);
+
+    // Apply hyperlinking to text fields
+    const linkedLocation = addHyperlinks(university.location || 'N/A', linkedEntitiesInView); // Calculate separately
+    const linkedTransitionInfo = addHyperlinks(university.transitionInfo || 'N/A', linkedEntitiesInView);
+    // Apply hyperlinking to RMP reviews
+    const linkedRmpPositive = addHyperlinks(university.rmpPositive || '', linkedEntitiesInView);
+    const linkedRmpNegative = addHyperlinks(university.rmpNegative || '', linkedEntitiesInView);
+    // Note: formatProfessorList needs internal logic update if we want links there too.
+    const formattedProfList = formatProfessorList(university.rmpPtProfs); // Keep as is for now
+    const linkedFirstYearRecs = addHyperlinks(university.rmpFirstYearRecs || 'N/A', linkedEntitiesInView);
 
     let detailsHTML = `
         <div class="university-details">
             <h2>${university.name || 'N/A'}</h2>
             <h3>University Info</h3>
-            <p><strong>Location:</strong> ${university.location || 'N/A'}</p>
+            <p><strong>Location:</strong> ${linkedLocation}</p>
             <h3>Program Details</h3>
             <p><strong>Program Length:</strong> ${university.programLength || 'N/A'}</p>
+            <!-- Placeholder for specific program link -->
             <p><strong>Scholarship Amount:</strong> ${university.scholarship || 'N/A'}</p>
             <p><strong>Estimated Annual Tuition:</strong> ${tuitionDisplayText}</p>
             <p><strong>Estimated Net Cost:</strong> ${netCostText}</p>
@@ -405,66 +809,134 @@ function displayDetails(university) {
             <p><strong>PT Class Size:</strong> ${university.ptClassSize || 'N/A'}</p>
             <h3>Rate My Professors Info</h3>
             ${generateRmpScoreHtml(university.rmpScore, university.rmpLink)}
-            <p><strong>School Summary:</strong> ${university.rmpSummary || 'N/A'}</p>
-            <div class="rmp-prof-list"><strong>PT/Related Professors:</strong> ${formatProfessorList(university.rmpPtProfs)}</div>
-            <p><strong>First Year Recs:</strong> ${university.rmpFirstYearRecs || 'N/A'}</p>
+            <p><strong>RMP Summary:</strong> ${addHyperlinks(university.rmpSummary || 'N/A', linkedEntitiesInView)}</p>
+            ${formatReviewBox('👍 Positive Feedback', linkedRmpPositive, 'positive')}
+            ${formatReviewBox('👎 Negative Feedback', linkedRmpNegative, 'negative')}
+            <div class="rmp-prof-list"><strong>PT/Related Professors:</strong> ${formattedProfList}</div>
+            <p><strong>First Year Recs:</strong> ${linkedFirstYearRecs}</p>
     `;
-            // RMP section already has H3
 
-    // Handle Cost Breakdown - Check if it looks like HTML or needs simple formatting
+    // Handle Cost Breakdown (Apply hyperlinking if it's simple text)
     if (university.costBreakdown) {
         const trimmedBreakdown = university.costBreakdown.trim();
         if (trimmedBreakdown.startsWith('<') && trimmedBreakdown.endsWith('>')) {
-             // Assume it's pre-formatted HTML (like DePaul's original entry)
              detailsHTML += `<h3>Cost Breakdown:</h3>${university.costBreakdown}`;
         } else if (trimmedBreakdown.includes(':') && trimmedBreakdown.includes(';')) {
-             // Assume semicolon-separated key:value pairs (like some CSV entries)
              detailsHTML += `<h3>Cost Breakdown:</h3><div class="cost-breakdown">`;
              trimmedBreakdown.split(';').forEach(item => {
                  const parts = item.split(':');
                  if (parts.length === 2) {
-                     detailsHTML += `<div class="cost-item"><span>${parts[0].trim()}</span><span>${parts[1].trim()}</span></div>`;
+                     // Apply hyperlinking to the value part
+                     detailsHTML += `<div class="cost-item"><span>${parts[0].trim()}</span><span>${addHyperlinks(parts[1].trim(), linkedEntitiesInView)}</span></div>`;
                  }
              });
              detailsHTML += `</div>`;
         } else if (trimmedBreakdown) {
-             // Otherwise, display as simple text
-             detailsHTML += `<h3>Cost Breakdown:</h3><p>${trimmedBreakdown}</p>`;
+             detailsHTML += `<h3>Cost Breakdown:</h3><p>${addHyperlinks(trimmedBreakdown, linkedEntitiesInView)}</p>`;
         }
     }
 
-    // --- Add Categorized Links ---
-    detailsHTML += `<h3>Helpful Links:</h3>`;
+    // --- Add Transportation Details ---
+    detailsHTML += `<div class="transportation-details"><h2>Transportation Information</h2>`;
+    // Pass linkedEntitiesInView to renderTransportationHTML so it can continue linking
+    detailsHTML += renderTransportationHTML("Public Transit", publicTransitData, linkedEntitiesInView);
+    detailsHTML += renderTransportationHTML("Driving & Parking", drivingParkingData, linkedEntitiesInView);
+    detailsHTML += renderTransportationHTML("Cycling", cyclingData, linkedEntitiesInView);
+    detailsHTML += renderTransportationHTML("Walking", walkingData, linkedEntitiesInView);
+    detailsHTML += renderTransportationHTML("Ride Sharing & Taxis", rideShareTaxiData, linkedEntitiesInView);
+    detailsHTML += renderTransportationHTML("Airport Access", airportAccessData, linkedEntitiesInView);
+    detailsHTML += renderTransportationHTML("Campus Shuttles", campusShuttleData, linkedEntitiesInView);
+    detailsHTML += `</div>`; // Close transportation-details
+    // --- End Transportation Details ---
+
+    // --- Add Specific Program Link and Categorized Links ---
+    let specificProgramLinkHtml = '';
+    let helpfulLinksHtml = '';
+    let jsonString = ''; // Define jsonString outside the try block
     try {
-        console.log(`displayDetails: Received linksJson: "${university.linksJson}"`); // <-- ADDED LOG
-        const links = JSON.parse(university.linksJson || '{}');
-        console.log(`displayDetails: Parsed links object:`, links); // <-- ADDED LOG
-        if (Object.keys(links).length > 0) {
-            detailsHTML += `<ul class="details-links-list">`;
-            for (const key in links) {
-                // Convert camelCase key to Title Case for display
-                const titleCaseKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                detailsHTML += `<li><a href="${links[key]}" target="_blank">${titleCaseKey}</a></li>`;
-            }
-            detailsHTML += `</ul>`;
-        } else {
-            detailsHTML += `<p>No specific links available.</p>`;
+        jsonString = university.linksJson || '{}'; // Initialize jsonString here
+        // Attempt to fix common JSON errors (Revised Again)
+        // console.log("Original JSON String:", jsonString); // Optional: Add log for debugging
+        // Fix 1: Remove ALL backslashes (as they seem extraneous here)
+        jsonString = jsonString.replace(/\\/g, ''); // Remove ALL backslashes
+        // Fix 2: Add quotes around keys
+        jsonString = jsonString.replace(/([{,]\s*)([^":\s]+)(\s*:)/g, '$1"$2"$3');
+        // Fix 3: Add quotes around URL values (starting with http)
+        // Match colon, optional space, then capture the URL until a comma or closing brace
+        jsonString = jsonString.replace(/:\s*(https?:\/\/[^,}]+)/g, ': "$1"');
+        // console.log("Cleaned JSON String:", jsonString); // Optional: Add log for debugging
+        const links = JSON.parse(jsonString); // Attempt parsing the fully cleaned string
+        // console.log(`displayDetails: Parsed links object:`, links); // Debug log
+
+        // Check for specific "DPT Program" link first
+        const dptProgramKey = Object.keys(links).find(k => k.toLowerCase() === 'dpt program'); // Case-insensitive check
+        if (dptProgramKey && links[dptProgramKey]) {
+             specificProgramLinkHtml = `<p><strong>Program Link:</strong> <a href="${links[dptProgramKey]}" target="_blank">${dptProgramKey} Page</a></p>`;
+             // Optionally remove it from the general list if you don't want duplicates
+             // delete links[dptProgramKey];
         }
+
+        // Generate the rest of the "Helpful Links" list
+        if (Object.keys(links).length > 0) {
+            helpfulLinksHtml += `<ul class="details-links-list">`;
+            for (const key in links) {
+                 // Skip the DPT program link if we already handled it and chose to remove duplicates
+                 // if (key.toLowerCase() === 'dpt program' && specificProgramLinkHtml) continue;
+
+                const titleCaseKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                helpfulLinksHtml += `<li><a href="${links[key]}" target="_blank">${titleCaseKey}</a></li>`;
+            }
+            helpfulLinksHtml += `</ul>`;
+        } else if (!specificProgramLinkHtml) { // Only show "No specific links" if neither DPT nor others were found
+             helpfulLinksHtml = `<p>No specific links available.</p>`;
+        }
+
     } catch (e) {
-        console.error("Error parsing links JSON for", university.name, e);
-        detailsHTML += `<p>Error loading links.</p>`;
+        console.error(`Error parsing links JSON for ${university.name}. String was: "${jsonString}"`, e);
+        helpfulLinksHtml = `<p>Error loading links.</p>`;
     }
-    // --- End Categorized Links ---
+
+    // Insert the specific program link at its placeholder
+    detailsHTML = detailsHTML.replace('<!-- Placeholder for specific program link -->', specificProgramLinkHtml);
+
+    // Add the "Helpful Links" section header and list
+    detailsHTML += `<h3>Helpful Links:</h3>${helpfulLinksHtml}`;
+    // --- End Links Processing ---
 
     detailsHTML += `
             <p><strong>FAFSA Code:</strong> ${university.fafsaCode || 'N/A'}</p>
-            <p><strong>Transition Info:</strong> ${university.transitionInfo || 'N/A'}</p>
-            ${university.website ? (console.log(`displayDetails: Using university.website for link: "${university.website}"`), `<p><a href="${university.website}" target="_blank">Visit Main University Website</a></p>`) : ''}
+            <p><strong>Transition Info:</strong> ${linkedTransitionInfo}</p>
+            ${university.website ? `<p><a href="${university.website}" target="_blank">Visit Main University Website</a></p>` : ''}
         </div>
     `;
 
     detailsDiv.innerHTML = detailsHTML;
 }
+// --- Helper function to format review boxes ---
+function formatReviewBox(title, reviewString, type) {
+    if (!reviewString || reviewString.trim() === '') {
+        return ''; // Don't display box if no reviews
+    }
+    const items = reviewString.split('* ').filter(item => item.trim() !== ''); // Split by bullet marker and remove empty entries
+    let listHtml = '<ul>';
+    items.forEach(item => {
+        // Basic quote detection and emphasis
+        let formattedItem = item.trim().replace(/Quote:\s*""([^"]+)""/g, '<em>"$1"</em>'); // Italicize quotes
+        listHtml += `<li>${formattedItem}</li>`;
+    });
+    listHtml += '</ul>';
+
+    // Add glyph based on type
+    const glyph = type === 'positive' ? '👍' : '👎';
+
+    return `
+        <div class="rmp-reviews-box rmp-reviews-${type}">
+            <h4>${glyph} ${title}</h4>
+            ${listHtml}
+        </div>
+    `;
+}
+
 
 // --- Helper function to format professor list ---
 function formatProfessorList(profString) {
@@ -518,16 +990,15 @@ function formatProfessorList(profString) {
 
             // 5. Construct list item
             let linkHtml = '';
-            console.log(`formatProfessorList: Extracted link: "${link}" for prof string: "${prof}"`); // <-- ADDED LOG
+            // console.log(`formatProfessorList: Extracted link: "${link}" for prof string: "${prof}"`); // Debug log
             if (link) {
-                 console.log(`formatProfessorList: Creating link with href: "${link}"`); // <-- ADDED LOG
+                 // console.log(`formatProfessorList: Creating link with href: "${link}"`); // Debug log
                  linkHtml = ` (<a href="${link}" target="_blank">RMP</a>)`;
             }
             let ratingHtml = ratingInfo ? ` (${ratingInfo})` : '';
 
             // Ensure we don't render the raw URL if parsing failed badly
             if (name.includes('http')) {
-                 console.error("Failed to properly parse name, potential raw URL:", name, "Original:", profString);
                  htmlList += `<li>Error parsing professor data</li>`;
             } else {
                  htmlList += `<li>${name}${ratingHtml}${linkHtml}${snippet}</li>`;
@@ -621,8 +1092,8 @@ function sortTable(columnIndex) {
         return a.originalIndex - b.originalIndex;
     });
 
-    // Repopulate the table with the sorted data
-    populateTable(universities);
+    // Repopulate the table with the sorted data using global min/max cost
+    populateTable(universities, globalMinCost, globalCostRange); // Pass global values
 
     // Clear details and selection after sorting
     detailsDiv.innerHTML = '';

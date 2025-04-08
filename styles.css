@@ -13,8 +13,8 @@ table {
 }
 th, td {
     border: 1px solid #ddd;
-    padding: 10px; /* Reduced padding */
-    text-align: left;
+    padding: 12px; /* Adjusted padding */
+    text-align: center; /* Centered text */
 }
 th {
     background-color: #4CAF50;
@@ -129,6 +129,10 @@ tr:hover {
 }
 
 /* Add min-width for specific columns to prevent excessive cramping */
+#universityTable th:nth-child(1),
+#universityTable td:nth-child(1) { /* University */
+    min-width: 200px;
+}
 #universityTable th:nth-child(6),
 #universityTable td:nth-child(6) { /* Demographics */
     min-width: 200px; /* Adjust as needed */
@@ -252,6 +256,73 @@ tr:hover {
     line-height: 1.4; /* Adjust line height for readability */
 }
 
+/* RMP Review Box Styling */
+.rmp-reviews-box {
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 10px 15px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+.rmp-reviews-box h4 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+    border-bottom: none; /* Override general h3 border */
+    padding-bottom: 0;
+}
+.rmp-reviews-box ul {
+    list-style: none; /* Remove default bullets */
+    padding-left: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+.rmp-reviews-box li {
+    margin-bottom: 5px;
+    padding-left: 1.3em; /* Space for glyph */
+    position: relative;
+    line-height: 1.4;
+}
+.rmp-reviews-box li::before {
+    content: '•'; /* Default bullet */
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-size: 1.2em; /* Adjust glyph size */
+}
+
+/* Positive Review Box */
+.rmp-reviews-positive {
+    background-color: #e8f5e9; /* Light green background */
+    border-left: 5px solid #4CAF50; /* Green accent border */
+}
+.rmp-reviews-positive h4 {
+    color: #2e7d32; /* Darker green heading */
+}
+.rmp-reviews-positive li {
+    color: #388e3c; /* Green text */
+}
+.rmp-reviews-positive li::before {
+    content: '✔'; /* Checkmark glyph */
+    color: #4CAF50; /* Match border */
+}
+
+/* Negative Review Box */
+.rmp-reviews-negative {
+    background-color: #ffebee; /* Light red background */
+    border-left: 5px solid #f44336; /* Red accent border */
+}
+.rmp-reviews-negative h4 {
+    color: #c62828; /* Darker red heading */
+}
+.rmp-reviews-negative li {
+    color: #d32f2f; /* Red text */
+}
+.rmp-reviews-negative li::before {
+    content: '✘'; /* Cross mark glyph */
+    color: #f44336; /* Match border */
+}
+
 /* Details Links List Styling */
 .details-links-list {
     list-style: disc; /* Use standard bullets */
@@ -261,4 +332,45 @@ tr:hover {
 }
 .details-links-list li {
     margin-bottom: 5px; /* Space between list items */
+}
+
+/* --- Transportation Details Styling --- */
+.transportation-details {
+    margin-top: 20px;
+    border-top: 2px solid #4CAF50; /* Add a separator */
+    padding-top: 15px;
+}
+.transportation-details h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #333;
+}
+.transport-category {
+    margin-bottom: 15px; /* Space between categories */
+    padding-left: 10px; /* Indent category content slightly */
+    border-left: 3px solid #eee; /* Subtle left border for category */
+}
+.transport-category h3 {
+    margin-bottom: 8px; /* Space below category title */
+    font-size: 1.1em;
+    color: #444;
+    border-bottom: none; /* Remove default h3 border */
+    padding-bottom: 0;
+}
+.transport-category dl {
+    margin: 0; /* Remove default dl margin */
+    padding: 0;
+}
+.transport-category dt {
+    font-weight: bold;
+    color: #555;
+    margin-top: 5px; /* Space above each key */
+}
+.transport-category dd {
+    margin-left: 15px; /* Indent the value */
+    margin-bottom: 5px; /* Space below each value */
+    line-height: 1.5;
+}
+.transport-category dd a {
+    word-break: break-all; /* Break long URLs */
 }

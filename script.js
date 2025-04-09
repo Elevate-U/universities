@@ -11,201 +11,181 @@ const tableHead = document.querySelector("#universityTable thead");
 const detailsDiv = document.getElementById("universityDetails");
 const sortableColumns = [0, 1, 2, 3]; // Define sortable columns once
 
-// --- CSV Parsing Function ---
-// Basic CSV parser, handles quoted fields containing commas.
-function parseCSV(csvText) {
-    const lines = csvText.trim().split('\n');
-    if (lines.length < 2) return []; // Need header + at least one data row
 
-    const parseLine = (line) => {
-        const values = [];
-        let currentVal = '';
-        let inQuotes = false; // Tracks if inside standard quotes (")
-        let inTripleQuotes = false; // Tracks if inside triple quotes (""")
+// --- Food Summaries Data ---
+const foodSummaries = {
+    "DePaul University": `Student feedback regarding dining options at DePaul University, as reflected in Rate My Professors reviews, often includes notable criticism. A recurring theme centers specifically on the quality of the food served in campus dining facilities. Many reviewers express dissatisfaction regarding the taste, preparation, or overall value perceived. While the vibrant Chicago location offers countless off-campus alternatives, the on-campus experience appears inconsistent according to this feedback. Positive comments about the food itself are scarce within the provided RMP summaries, making the critiques on quality stand out. These dining concerns contribute to the list of practical challenges some students report experiencing alongside issues like safety or bureaucracy. Prospective students evaluating DePaul might consider budgeting for off-campus meals or thoroughly investigating current dining hall offerings during a campus visit, given the trend in these reviews. Exploring menus online or sampling food during a tour could offer valuable firsthand insight.`,
+    "University of Illinois Chicago": `Dining at the University of Illinois Chicago receives mixed, though often critical, commentary in Rate My Professors reviews. The term "hit or miss" is used in the summary, suggesting significant inconsistency in the quality of food provided. Students report variability in meal preparation and taste across different locations or times. Beyond quality, limited options or inconvenient hours might also contribute to dissatisfaction, especially considering UIC's reputation as a commuter school where campus life can quiet down significantly on weekends. While specific positive reviews might exist, the overall trend from the provided data indicates that food is not generally considered a highlight of the UIC experience. Given the university's location within Chicago, students have numerous external dining choices in nearby neighborhoods like Little Italy. However, reliance on campus dining appears to be met with inconsistent satisfaction according to these RMP summaries. Investigating current dining plans and locations via the UIC Dining Services website is advisable.`,
+    "University of Michigan-Flint": `The culinary experience at the University of Michigan-Flint appears to be a significant point of dissatisfaction according to Rate My Professors reviews. Feedback strongly indicates that food quality and options are poorly rated by students. This criticism stands in contrast to generally positive remarks about academics and faculty support found in the same reviews. The summaries suggest that students find the on-campus dining choices lacking in taste, variety, or overall appeal. For a campus sometimes described as having a 'commuter feel,' limited or unappetizing food options could further detract from the on-campus experience, particularly for residential students. While the campus itself is noted as safe and having good facilities otherwise, dining seems to be a consistent area needing improvement based on this RMP feedback. Prospective students should directly investigate current UM-Flint Dining options, menus, and hours, and explore nearby off-campus alternatives in downtown Flint.`,
+    "University of Texas at Dallas": `Dining experiences at the University of Texas at Dallas are frequently criticized according to Rate My Professors reviews. The feedback highlights issues with both food quality and operational hours. Chartwells, the university's food service provider, is sometimes mentioned in relation to concerns about taste and preparation standards. Limited dining hours are another significant point of frustration noted in the reviews, exemplified by complaints about the Student Union (SU) closing relatively early. This lack of late-night or potentially weekend availability can negatively impact students, particularly on a campus sometimes described as having a less active social or residential scene. While UTD boasts strong academics, the dining situation appears to be a consistent drawback based on this student feedback. Exploring the current offerings on the UTD Dining website and checking the numerous off-campus options in the surrounding Richardson area would be wise for prospective students.`,
+    "Ithaca College": `Ithaca College's dining services receive notable criticism in Rate My Professors reviews, despite general praise for academics. Students frequently mention issues with poor food quality and high costs associated with meal plans. The variety and taste of offerings in the dining halls seem to be common points of dissatisfaction. These complaints about food contribute to broader concerns sometimes raised about campus life aspects, contrasting with the positive educational experience many report. While Ithaca offers off-campus dining, the on-campus options appear to be a significant drawback for many students according to these reviews. Reliability of dining hall hours or specific location availability might also be factors, though quality and cost are the most prominent themes in the provided RMP summaries. Prospective students should review current Ithaca Dining Services information, including menus and pricing, and potentially budget for off-campus meals.`,
+    "University of Hartford": `Dining at the University of Hartford is frequently cited as a point of concern in Rate My Professors reviews. Alongside complaints about outdated facilities and high costs, poor food quality and limited variety are common themes in student feedback. Reviews suggest dissatisfaction with the taste, preparation, and options available through campus dining services. For a campus sometimes described as having a weaker social life or being somewhat isolated, unappealing food options can significantly impact the residential experience. While academic programs like PT might be strong, the day-to-day aspect of campus dining appears to be a consistent area needing improvement based on this RMP data. Students considering UHart should investigate the current Dining Services offerings, locations, and meal plan structures, keeping in mind the trend of criticism found in these reviews. Exploring off-campus options in nearby West Hartford might also be necessary.`,
+    "Saint Louis University": `Saint Louis University's dining hall food is frequently criticized in Rate My Professors reviews, representing a notable drawback mentioned alongside safety concerns. Students often express dissatisfaction with the quality, taste, and potentially the variety of meals offered through campus dining. This seems to be a consistent theme contrasting with generally positive feedback about academics and specific professors, particularly within the PT program. While the university has good facilities overall, the culinary experience appears to be lacking according to this student sentiment. Given that reviewers sometimes feel a car is needed to fully access St. Louis, reliance on potentially subpar campus food could be a significant factor for residential students. Prospective students should examine current menus, locations, and hours via SLU Dining Services and consider the recurring critiques highlighted in the RMP feedback when evaluating their options.`,
+    "Duquesne University": `Food at Duquesne University is commonly identified as an area for improvement based on feedback found in Rate My Professors reviews. Alongside high costs and social scene critiques, poor food quality or limited options are frequently mentioned downsides. Students seem generally unsatisfied with the taste, variety, or value provided by campus dining services. While the university's location offers access to Pittsburgh's culinary scene, the on-campus dining experience itself appears to be a source of complaint according to these reviews. The consistency and appeal of meals served in dining halls seem to fall short of expectations for a number of students reporting on RMP. It would be advisable for prospective students to look into the current offerings via Duquesne Dining, consider meal plan costs relative to perceived quality, and explore off-campus alternatives.`,
+    "Widener University": `Widener University's dining services face criticism regarding quality according to Rate My Professors reviews. The RMP summary highlights poor food as a common complaint, listed alongside issues like high cost, facility conditions, and weak social life. This suggests that the meals provided on campus may lack appeal in terms of taste, preparation, or variety. For students living on campus, particularly given concerns sometimes raised about the surrounding Chester area limiting off-campus ventures, unsatisfactory food can significantly impact daily life. While the university might offer strong academic or co-op opportunities, dining appears to be a consistent point of negative feedback. Prospective students should carefully review the options, menus, and costs provided by Widener Dining and factor the reported quality issues from RMP into their decision-making process.`,
+    "Gonzaga University": `Dining at Gonzaga University receives notable criticism for being both poor in quality and expensive, according to Rate My Professors reviews. While the university is praised for its strong community, campus beauty, and supportive professors, the food service appears to be a significant drawback for many students. Reviews suggest dissatisfaction with the taste, variety, and overall value of the meals provided on campus relative to their cost. This is mentioned alongside concerns about the surrounding Spokane area and occasional critiques of dorms or academics not matching the high price tag. The consistency of negative food comments suggests it's a widespread issue impacting the student experience. Prospective students should investigate current meal plans and options via Zag Dining by Sodexo but be aware of the recurring critiques regarding quality and cost found in the RMP feedback.`,
+    "Daemen University": `Daemen University's food services are heavily criticized in Rate My Professors reviews, often described as "terrible." Complaints focus on poor quality, limited hours, lack of variety, and, alarmingly, mentions of food poisoning incidents in some reviews. This negative feedback stands in stark contrast to praise for academics in specific programs like PT/PA/Nursing. For a campus already criticized for a poor social life and lack of activities, subpar and potentially unsafe food options represent a major detractor from the overall student experience, especially for residents. The consistency and severity of these complaints suggest systemic issues with campus dining based on this RMP data. Prospective students must carefully investigate current Daemen Dining options, hours, and safety records, and strongly consider alternatives in the Amherst area, given the strong negative sentiment in reviews.`,
+    "Baylor University": `Dining at Baylor University is identified as an area of weakness in Rate My Professors reviews. While the university receives praise for its community, faculty support, and facilities, the food quality and cost are frequently criticized. Students express dissatisfaction with the taste, variety, and expense of meals provided through campus dining services. This negative feedback is listed alongside concerns about an exclusive campus culture and safety in the surrounding Waco area. For students living on campus, the perceived poor quality and high cost of mandatory meal plans can be a significant source of frustration. Prospective students should explore the current Baylor Dining Services locations, menus, and meal plan costs, while keeping in mind the recurring critiques regarding food quality highlighted in the RMP feedback.`
+    // Add other universities here if needed
+};
 
-        for (let i = 0; i < line.length; i++) {
-            const char = line[i];
-            const nextTwo = line.substring(i + 1, i + 3); // Look ahead for triple quotes
-
-            if (inTripleQuotes) {
-                // Check for end of triple-quoted field (""")
-                if (char === '"' && nextTwo === '""') {
-                    inTripleQuotes = false;
-                    i += 2; // Skip the next two quotes
-                }
-                // Check for escaped standard quote ("") inside triple quotes
-                else if (char === '"' && i + 1 < line.length && line[i+1] === '"') {
-                     currentVal += '"';
-                     i++; // Skip the next quote
-                } else {
-                    currentVal += char;
-                }
-            } else if (inQuotes) {
-                // Check for end of standard quoted field (")
-                if (char === '"') {
-                    // Check for escaped quote ("")
-                    if (i + 1 < line.length && line[i+1] === '"') {
-                        currentVal += '"';
-                        i++; // Skip the next quote
-                    } else {
-                        inQuotes = false; // End of standard quoted field
-                    }
-                } else {
-                    currentVal += char;
-                }
-            } else {
-                // Outside any quotes
-                if (char === '"' && nextTwo === '""') {
-                    // Start of triple-quoted field
-                    inTripleQuotes = true;
-                    i += 2; // Skip the next two quotes
-                } else if (char === '"') {
-                    // Start of standard quoted field
-                    inQuotes = true;
-                } else if (char === ',') {
-                    // End of field
-                    values.push(currentVal.trim()); // Keep value as is for now
-                    currentVal = '';
-                } else {
-                    // Regular character
-                    currentVal += char;
-                }
-            }
-        }
-        values.push(currentVal.trim()); // Add the last value
-
-        // Clean up surrounding quotes after parsing the line
-        return values.map(val => {
-            if (val.startsWith('"""') && val.endsWith('"""')) {
-                return val.substring(3, val.length - 3).replace(/""/g, '"'); // Remove triple quotes and unescape internal ""
-            } else if (val.startsWith('"') && val.endsWith('"')) {
-                return val.substring(1, val.length - 1).replace(/""/g, '"'); // Remove standard quotes and unescape internal ""
-            }
-            return val; // Return as is if not quoted
-        });
-    };
-
-    const headers = parseLine(lines[0]).map(h => h.trim()); // Trim headers
-    const data = [];
-
-    // Map CSV headers to JS object keys
-    // Ensure these CSV headers exactly match your universitydata.csv file
-    const headerMap = {
-        "University": "name",
-        "Scholarship": "scholarship",
-        "Tuition": "tuition",
-        "TuitionDisplay": "tuitionDisplay",
-        "ProgramLength": "programLength",
-        "FAFSA Code": "fafsaCode",
-        "Location": "location",
-        "TransitionInfo": "transitionInfo",
-        "Website": "website",
-        "CostBreakdown": "costBreakdown",
-        "Links": "linksJson",
-        "TotalPopulation": "totalPopulation",
-        "Demographics": "demographics",
-        "AvgClassSize": "avgClassSize",
-        "PTClassSize": "ptClassSize",
-        "RMP_Score": "rmpScore",
-        "RMP_Link": "rmpLink",
-        "RMP_Summary": "rmpSummary", // Re-added mapping for existing column
-        "RMP_Positive_Reviews": "rmpPositive", // Added positive reviews mapping
-        "RMP_Negative_Reviews": "rmpNegative", // Added negative reviews mapping
-        "RMP_PT_Profs": "rmpPtProfs",
-        "RMP_FirstYear_Recs": "rmpFirstYearRecs",
-        // New Transportation Columns
-        "PublicTransitInfo": "publicTransitInfo",
-        "DrivingParkingInfo": "drivingParkingInfo",
-        "CyclingInfo": "cyclingInfo",
-        "WalkingInfo": "walkingInfo",
-        "RideShareTaxiInfo": "rideShareTaxiInfo",
-        "AirportAccessInfo": "airportAccessInfo",
-        "CampusShuttleInfo": "campusShuttleInfo"
-    };
-
-    // Find the index for each required header
-    const indices = {};
-    Object.keys(headerMap).forEach(csvHeader => {
-        const index = headers.indexOf(csvHeader);
-        if (index !== -1) {
-            indices[headerMap[csvHeader]] = index;
-        } else {
-             // Only warn if the header is expected based on the map keys
-             if (headerMap.hasOwnProperty(csvHeader)) {
-                 console.warn(`CSV Header "${csvHeader}" not found.`);
-             }
-        }
-    });
-    // console.log("CSV Header Indices Found:", indices); // Log found indices - REMOVED
-
-    for (let i = 1; i < lines.length; i++) {
-        if (lines[i].trim() === '') continue; // Skip empty lines
-        const values = parseLine(lines[i]);
-        const university = {};
-        Object.keys(indices).forEach(jsKey => {
-            const index = indices[jsKey];
-            // Assign value or empty string if index is out of bounds for the row
-            university[jsKey] = values[index] !== undefined ? values[index] : '';
-        });
-        // Add the raw index for potential stable sorting later if needed
-        university.originalIndex = i - 1;
-        data.push(university);
-    }
-
-    return data;
-}
-
-
-// --- Data Loading Function ---
+// --- Data Loading Function (Using Papa Parse) ---
 async function loadAndDisplayData() {
+    // Define expected headers based on the headerMap used later
+    const expectedHeaders = [
+        "University", "Scholarship", "Tuition", "TuitionDisplay", "ProgramLength",
+        "FAFSA Code", "Location", "TransitionInfo", "Website", "CostBreakdown",
+        "Links", "TotalPopulation", "Demographics", "AvgClassSize", "PTClassSize",
+        "RMP_Score", "RMP_Link", "RMP_Summary", "RMP_PT_Profs", "RMP_FirstYear_Recs",
+        "RMP_Positive_Reviews", "RMP_Negative_Reviews", "publicTransitInfo",
+        "drivingParkingInfo", "cyclingInfo", "walkingInfo", "rideShareTaxiInfo",
+        "airportAccessInfo", "campusShuttleInfo"
+    ];
+    const expectedFieldCount = expectedHeaders.length;
+
     try {
-        // Add cache-busting query parameter to prevent stale data
-        const response = await fetch('universitydata.csv?cachebust=' + Date.now());
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const csvText = await response.text();
-        universities = parseCSV(csvText); // Update the global universities array
+        Papa.parse('universitydata.csv?cachebust=' + Date.now(), {
+            download: true, // Fetch the file
+            header: true,   // Use the first row as headers
+            skipEmptyLines: true, // Skip empty lines
+            dynamicTyping: false, // Treat all values as strings initially
+            // REMOVED step function to avoid modifying data during stream
+            // REMOVED step function to avoid modifying data during stream
+            // REMOVED step function to avoid modifying data during stream
 
-        if (universities.length === 0) {
-             console.warn("CSV parsing resulted in empty data array.");
-             tableBody.innerHTML = `<tr><td colspan="8">No data loaded from CSV. Check file format and content.</td></tr>`; // Main table colspan remains 8
-             return;
-        }
+            complete: function(results) {
+                console.log("Papa Parse Results:", results); // Log Papa Parse output
 
-        // --- Calculate Min/Max Net Cost for Data Bars ---
-        let minCost = Infinity;
-        let maxCost = -Infinity;
-        universities.forEach(uni => {
-            const cost = calculateNetCost(uni);
-            if (!isNaN(cost)) {
-                if (cost < minCost) minCost = cost;
-                if (cost > maxCost) maxCost = cost;
+                // Log field count errors but proceed, as we will pad the data
+                const fieldCountErrors = results.errors.filter(e => e.code === 'TooFewFields' || e.code === 'TooManyFields');
+                if (fieldCountErrors.length > 0) {
+                    console.warn("Papa Parse Field Count Errors (will attempt to pad):", fieldCountErrors);
+                }
+                // Log other critical errors
+                const otherErrors = results.errors.filter(e => e.code !== 'TooFewFields' && e.code !== 'TooManyFields');
+                if (otherErrors.length > 0) {
+                    console.error("Papa Parse Critical Errors:", otherErrors);
+                    tableBody.innerHTML = `<tr><td colspan="12">Error parsing CSV. Check console. (${otherErrors[0].message})</td></tr>`;
+                    return; // Stop processing for critical errors
+                }
+
+                // --- ADDED: Pad missing fields in results.data ---
+                if (results.data && results.data.length > 0) {
+                    results.data.forEach((row, index) => {
+                        const actualFields = Object.keys(row);
+                        if (actualFields.length < expectedFieldCount) {
+                            // console.log(`Padding row index ${index} (CSV row ${index + 2})`); // CSV row is index + header + 1
+                            expectedHeaders.forEach(header => {
+                                if (!row.hasOwnProperty(header)) {
+                                    row[header] = ''; // Add missing field with empty string
+                                }
+                            });
+                        }
+                    });
+                }
+                // --- End Padding ---
+                // Map Papa Parse data (keys are headers) to our expected object structure
+                const headerMap = {
+                    "University": "name",
+                    "Scholarship": "scholarship",
+                    "Tuition": "tuition",
+                    "TuitionDisplay": "tuitionDisplay",
+                    "ProgramLength": "programLength",
+                    "FAFSA Code": "fafsaCode",
+                    "Location": "location",
+                    "TransitionInfo": "transitionInfo",
+                    "Website": "website",
+                    "CostBreakdown": "costBreakdown",
+                    "Links": "linksJson",
+                    "TotalPopulation": "totalPopulation",
+                    "Demographics": "demographics",
+                    "AvgClassSize": "avgClassSize",
+                    "PTClassSize": "ptClassSize",
+                    "RMP_Score": "rmpScore",
+                    "RMP_Link": "rmpLink",
+                    "RMP_Summary": "rmpSummary",
+                    "RMP_Positive_Reviews": "rmpPositive", // Corrected mapping
+                    "RMP_Negative_Reviews": "rmpNegative", // Corrected mapping
+                    "RMP_PT_Profs": "rmpPtProfs",
+                    "RMP_FirstYear_Recs": "rmpFirstYearRecs",
+                    "PublicTransitInfo": "publicTransitInfo", // Corrected mapping
+                    "DrivingParkingInfo": "drivingParkingInfo", // Corrected mapping
+                    "CyclingInfo": "cyclingInfo",
+                    "WalkingInfo": "walkingInfo",
+                    "RideShareTaxiInfo": "rideShareTaxiInfo",
+                    "AirportAccessInfo": "airportAccessInfo",
+                    "CampusShuttleInfo": "campusShuttleInfo"
+                };
+
+                // Now map the potentially padded data
+                universities = results.data.map((row, index) => {
+                    console.log(`[Papa Parse Map] Index ${index}: Raw Row Review Data - Positive:`, row['RMP_Positive_Reviews'], 'Negative:', row['RMP_Negative_Reviews']); // DEBUG LOG
+                    const university = {};
+                    // Map CSV headers to JS keys using headerMap
+                    Object.keys(headerMap).forEach(csvHeader => {
+                        const jsKey = headerMap[csvHeader];
+                        // Access the potentially padded row data
+                        university[jsKey] = row[csvHeader] !== undefined ? String(row[csvHeader]).trim() : '';
+                    });
+                    university.originalIndex = index; // Keep original index
+                    return university;
+                    console.log(`[Papa Parse Map] Index ${index}: Mapped University Review Data - Positive:`, university.rmpPositive, 'Negative:', university.rmpNegative); // DEBUG LOG
+                });
+
+                // Check for empty array AFTER padding and mapping attempt
+                if (universities.length === 0 && results.data.length > 0) {
+                     console.error("Data mapping failed after parsing. Check headerMap and CSV headers.");
+                     tableBody.innerHTML = `<tr><td colspan="12">Error processing parsed data. Check console.</td></tr>`;
+                     return;
+                } else if (universities.length === 0) {
+                     console.warn("CSV parsing resulted in empty data array (or file is empty).");
+                     tableBody.innerHTML = `<tr><td colspan="12">No data loaded from CSV. Check file format and content.</td></tr>`;
+                     return;
+                }
+
+                // --- Calculate Min/Max Net Cost for Data Bars ---
+                let minCost = Infinity;
+                let maxCost = -Infinity;
+                universities.forEach(uni => {
+                    const cost = calculateNetCost(uni);
+                    if (!isNaN(cost)) {
+                        if (cost < minCost) minCost = cost;
+                        if (cost > maxCost) maxCost = cost;
+                    }
+                });
+                // Handle case where no valid costs are found
+                if (minCost === Infinity || maxCost === -Infinity) {
+                    minCost = 0;
+                    maxCost = 0;
+                }
+                const costRange = maxCost - minCost;
+                // Store globally
+                globalMinCost = minCost;
+                globalCostRange = costRange;
+                // --- End Min/Max Calculation ---
+
+                populateTable(universities, globalMinCost, globalCostRange); // Use global values
+                updateHeaderSortIndicators(); // Update sort indicators
+                // Clear details and selection when data reloads initially
+                detailsDiv.innerHTML = '';
+
+                if (currentlySelectedRow) {
+                    currentlySelectedRow.classList.remove('selected-row');
+                    currentlySelectedRow = null;
+                }
+            },
+            error: function(error) {
+                console.error("Error fetching or parsing CSV with Papa Parse:", error);
+                // Display error in the table body
+                tableBody.innerHTML = `<tr><td colspan="12">Error loading data. Please check console and CSV file. (${error.message || error})</td></tr>`;
             }
         });
-        // Handle case where no valid costs are found
-        if (minCost === Infinity || maxCost === -Infinity) {
-            minCost = 0;
-            maxCost = 0;
-        }
-        const costRange = maxCost - minCost;
-        // Store globally
-        globalMinCost = minCost;
-        globalCostRange = costRange;
-        // --- End Min/Max Calculation ---
 
-        populateTable(universities, globalMinCost, globalCostRange); // Use global values
-        updateHeaderSortIndicators(); // Update sort indicators
-        // Clear details and selection when data reloads initially
-        detailsDiv.innerHTML = '';
-        if (currentlySelectedRow) {
-            currentlySelectedRow.classList.remove('selected-row');
-            currentlySelectedRow = null;
-        }
     } catch (error) {
-        console.error("Error loading or parsing CSV:", error);
-        // Display error in the table body
-        tableBody.innerHTML = `<tr><td colspan="8">Error loading data. Please check console and CSV file. (${error.message})</td></tr>`; // Main table colspan remains 8
+        // This catch block might still be useful for errors outside Papa Parse's scope,
+        // but Papa Parse's error callback handles fetch/parse errors primarily.
+        console.error("Unexpected error in loadAndDisplayData:", error);
+        tableBody.innerHTML = `<tr><td colspan="12">An unexpected error occurred. Check console. (${error.message})</td></tr>`;
     }
 }
 
@@ -270,6 +250,8 @@ function calculateNetCost(university) {
     let parsedTuition = NaN;
 
     // Prioritize TuitionDisplay for Widener calculation if available
+    if (university.name === "Widener University") {
+    }
     if (university.name === "Widener University" && university.tuitionDisplay) {
          const tuitionParts = university.tuitionDisplay.match(/\$\s*([\d,]+(\.\d+)?)/g); // Improved regex for decimals
          if (tuitionParts && tuitionParts.length === 3) {
@@ -279,8 +261,9 @@ function calculateNetCost(university) {
              if (!isNaN(year1) && !isNaN(year2) && !isNaN(year3)) {
                  tuitionNum = (year1 + year2 + year3) / 3; // Use average for net cost calculation
              }
+         } else { // Corresponds to: if (tuitionParts && tuitionParts.length === 3)
          }
-    }
+    } // Closes: if (university.name === "Widener University" && university.tuitionDisplay)
 
     // If Widener average wasn't calculated or it's another university, parse the main tuition field
     if (isNaN(tuitionNum)) {
@@ -296,7 +279,6 @@ function calculateNetCost(university) {
     if (!isNaN(tuitionNum) && !isNaN(scholarshipNum)) {
         netCost = tuitionNum - scholarshipNum;
     }
-
     return netCost; // Return the number or NaN
 }
 
@@ -348,68 +330,95 @@ function generateRmpScoreHtml(rmpScore, rmpLink) {
 
 
 // --- Table Population Function ---
-function populateTable(data, minCost, costRange) { // Added minCost, costRange params
-    tableBody.innerHTML = ''; // Clear existing rows
 
-    data.forEach((university) => { // No need for index here anymore unless for debugging
+function populateTable(data, minCost, costRange) {
+    tableBody.innerHTML = '';
+
+    // Define the keys corresponding to the columns to display in the main table
+    // These keys match the properties in the `university` object after mapping
+    const keysToDisplayInTable = [
+        "name",         // "University"
+        "scholarship",  // "Scholarship Amount (Annual)"
+        "tuition",      // "Estimated Annual Tuition (2025)"
+        "netCost",      // "Estimated Net Cost (Annual)" - Calculated
+        "totalPopulation", // "Total Population"
+        "demographics", // "Demographics"
+        "avgClassSize", // "Avg Class Size/Ratio"
+        "ptClassSize"   // "PT Class Size"
+    ];
+
+    data.forEach((university) => {
         const row = tableBody.insertRow();
-        // Store the university object directly on the row for easy access in click handler
+        // Store the *entire* university object for the details view
         row.dataset.university = JSON.stringify(university);
 
-        const nameCell = row.insertCell();
-        const scholarshipCell = row.insertCell();
-        const tuitionCell = row.insertCell();
-        const netCostCell = row.insertCell();
-        // Add new cells
-        const populationCell = row.insertCell();
-        const demographicsCell = row.insertCell();
-        const avgClassSizeCell = row.insertCell();
-        const ptClassSizeCell = row.insertCell();
+        keysToDisplayInTable.forEach(key => {
+            const cell = row.insertCell();
+            let cellValue = '';
 
-
-        nameCell.textContent = university.name || 'N/A'; // Add fallback
-        scholarshipCell.textContent = university.scholarship || 'N/A';
-
-        // Use tuitionDisplay if available, otherwise format tuition from the main field
-        const tuitionValue = parseValue(university.tuition);
-        tuitionCell.textContent = university.tuitionDisplay ? university.tuitionDisplay
-            : (!isNaN(tuitionValue) ? `$${tuitionValue.toLocaleString()}` : (university.tuition || 'N/A'));
-
-        // Calculate and display Net Cost
-        const netCost = calculateNetCost(university);
-        // Store the raw numeric net cost for sorting FIRST
-        netCostCell.dataset.value = isNaN(netCost) ? -Infinity : netCost; // Use -Infinity for N/A
-
-        // --- Create Data Bar HTML ---
-        const netCostText = formatNetCost(netCost, university.name);
-        let barPercent = 0;
-        if (!isNaN(netCost) && costRange > 0) {
-            barPercent = Math.max(0, Math.min(100, ((netCost - minCost) / costRange) * 100));
-        } else if (!isNaN(netCost) && costRange === 0 && maxCost > 0 && netCost === maxCost) {
-             // Handle case where all valid costs are the same positive value
-             barPercent = 100;
-        } else if (!isNaN(netCost) && costRange === 0 && maxCost <= 0 && netCost === maxCost) {
-             // Handle case where all valid costs are the same non-positive value
-             barPercent = 0; // Or decide how to represent this visually
-        }
-        // If netCost is NaN, barPercent remains 0
-
-        netCostCell.innerHTML = `
-            <div class="net-cost-cell-wrapper" title="Net Cost: ${netCostText}">
-              <span class="net-cost-value">${netCostText}</span>
-              <div class="net-cost-bar-container">
-                 <div class="net-cost-bar" style="width: ${barPercent.toFixed(2)}%;" aria-hidden="true"></div>
-              </div>
-            </div>
-        `;
-        // --- End Data Bar HTML ---
-
-        // Populate new cells with fallbacks
-        populationCell.textContent = university.totalPopulation || 'N/A';
-        demographicsCell.textContent = university.demographics || 'N/A';
-        avgClassSizeCell.textContent = university.avgClassSize || 'N/A';
-        ptClassSizeCell.textContent = university.ptClassSize || 'N/A';
-
+            switch (key) {
+                case "name":
+                    cellValue = university.name || 'N/A';
+                    cell.textContent = cellValue;
+                    break;
+                case "scholarship":
+                    const scholarshipValue = parseValue(university.scholarship);
+                    cellValue = !isNaN(scholarshipValue) ? `$${scholarshipValue.toLocaleString()}` : (university.scholarship || 'N/A');
+                    cell.textContent = cellValue;
+                    break;
+                case "tuition":
+                    const tuitionValue = parseValue(university.tuition);
+                    // Always use the 'Tuition' column value, formatted
+                    if (!isNaN(tuitionValue)) {
+                        cellValue = `$${tuitionValue.toLocaleString()}`;
+                    } else {
+                        // Fallback if numeric parsing failed, use the raw string if available
+                        cellValue = university.tuition || 'N/A';
+                    }
+                    cell.textContent = cellValue;
+                    break;
+                case "netCost":
+                    const netCost = calculateNetCost(university);
+                    cell.dataset.value = isNaN(netCost) ? -Infinity : netCost; // Store numeric value for sorting
+                    const netCostText = formatNetCost(netCost, university.name);
+                    let barPercent = 0;
+                    if (!isNaN(netCost) && costRange > 0) {
+                        barPercent = Math.max(0, Math.min(100, ((netCost - minCost) / costRange) * 100));
+                    } else if (!isNaN(netCost) && costRange === 0 && maxCost > 0 && netCost === maxCost) {
+                         barPercent = 100;
+                    } else if (!isNaN(netCost) && costRange === 0 && maxCost <= 0 && netCost === maxCost) {
+                         barPercent = 0;
+                    }
+                    // Display Net Cost with bar
+                    cell.innerHTML = `
+                        <div class="net-cost-cell-wrapper" title="Net Cost: ${netCostText}">
+                          <span class="net-cost-value">${netCostText}</span>
+                          <div class="net-cost-bar-container">
+                             <div class="net-cost-bar" style="width: ${barPercent.toFixed(2)}%;" aria-hidden="true"></div>
+                          </div>
+                        </div>
+                    `;
+                    break; // innerHTML was set, no need for textContent
+                case "totalPopulation":
+                    cellValue = university.totalPopulation || 'N/A';
+                    cell.textContent = cellValue;
+                    break;
+                case "demographics":
+                    cellValue = university.demographics || 'N/A';
+                    cell.textContent = cellValue;
+                    break;
+                case "avgClassSize":
+                    cellValue = university.avgClassSize || 'N/A';
+                    cell.textContent = cellValue;
+                    break;
+                case "ptClassSize":
+                    cellValue = university.ptClassSize || 'N/A';
+                    cell.textContent = cellValue;
+                    break;
+                default:
+                    cell.textContent = 'N/A'; // Fallback for unexpected keys
+            }
+        });
 
         row.addEventListener("click", () => {
             // Retrieve the university data stored on the row
@@ -454,31 +463,45 @@ const entityUrlMap = {
     // "Waco": "https://en.wikipedia.org/wiki/Waco,_Texas", // Alias - Removed due to causing nested link issue
     "Lincoln Park": "https://en.wikipedia.org/wiki/Lincoln_Park,_Chicago",
     "Loop": "https://en.wikipedia.org/wiki/Chicago_Loop",
-    // Universities (Mainly for context, already linked elsewhere)
+    // Universities - Main sites and program-specific links
     "DePaul University": "https://www.depaul.edu/",
+    "DePaul DPT": "https://csh.depaul.edu/academics/graduate/health-sciences/Pages/default.aspx",
     "University of Illinois Chicago": "https://www.uic.edu/",
+    "UIC DPT": "https://ahs.uic.edu/physical-therapy/",
     "UIC": "https://www.uic.edu/",
     "University of Michigan-Flint": "https://www.umflint.edu/",
+    "UM-Flint DPT": "https://www.umflint.edu/physicaltherapy/",
     "UM-Flint": "https://www.umflint.edu/",
     "University of Texas at Dallas": "https://www.utdallas.edu/",
+    "UTD DPT": "https://www.utdallas.edu/ah/programs/dpt/",
     "UTD": "https://www.utdallas.edu/",
     "UT Southwestern": "https://www.utsouthwestern.edu/",
+    "UTSW DPT": "https://www.utsouthwestern.edu/education/school-of-health-professions/programs/doctor-physical-therapy/",
     "Ithaca College": "https://www.ithaca.edu/",
+    "Ithaca DPT": "https://www.ithaca.edu/hs/depts/pt/",
     "University of Hartford": "https://www.hartford.edu/",
+    "UHart DPT": "https://www.hartford.edu/hps/academics/graduate/physical-therapy/",
     "UHart": "https://www.hartford.edu/",
     "Saint Louis University": "https://www.slu.edu/",
+    "SLU DPT": "https://www.slu.edu/doisy/degrees/undergraduate/physical-therapy.php",
     "SLU": "https://www.slu.edu/",
     "Duquesne University": "https://www.duq.edu/",
+    "Duquesne DPT": "https://www.duq.edu/academics/schools/health-sciences/academics/departments-and-programs/physical-therapy",
     "Duquesne": "https://www.duq.edu/",
     "Widener University": "https://www.widener.edu/",
+    "Widener DPT": "https://www.widener.edu/academics/programs/physical-therapy",
     "Widener": "https://www.widener.edu/",
     "Gonzaga University": "https://www.gonzaga.edu/",
+    "Gonzaga DPT": "https://www.gonzaga.edu/school-of-health-sciences/departments/physical-therapy",
     "Gonzaga": "https://www.gonzaga.edu/",
     "University of New Mexico": "https://www.unm.edu/",
+    "UNM DPT": "https://hsc.unm.edu/pharmacy/academics/physical-therapy/",
     "UNM": "https://www.unm.edu/",
     "Daemen University": "https://www.daemen.edu/",
+    "Daemen DPT": "https://www.daemen.edu/academics/areas-study/physical-therapy",
     "Daemen": "https://www.daemen.edu/",
     "Baylor University": "https://www.baylor.edu/",
+    "Baylor DPT": "https://www.baylor.edu/pt/",
     "Baylor": "https://www.baylor.edu/",
     // Transit Agencies & Systems
     "CTA": "https://www.transitchicago.com/",
@@ -578,7 +601,14 @@ const entityUrlMap = {
     "college town": "https://en.wikipedia.org/wiki/College_town",
     "Greek life": "https://en.wikipedia.org/wiki/Fraternities_and_sororities",
     "Co-op": "https://en.wikipedia.org/wiki/Cooperative_education",
-    "PA": "https://en.wikipedia.org/wiki/Physician_assistant", // Assuming context is Physician Assistant
+    // "PA": "https://en.wikipedia.org/wiki/Physician_assistant", // REMOVED - Too ambiguous, conflicts with state abbreviation. Rely on specific city, state keys.
+    "Physical Therapy": "https://en.wikipedia.org/wiki/Physical_therapy",
+    "Kinesiology": "https://en.wikipedia.org/wiki/Kinesiology",
+    "Exercise Science": "https://en.wikipedia.org/wiki/Exercise_physiology",
+    "APTA": "https://www.apta.org/",
+    "CAPTE": "https://www.capteonline.org/",
+    "NPTE": "https://www.fsbpt.org/Secondary-Pages/Exam-Candidates/National-Physical-Therapy-Examination",
+    "Clery Act": "https://www2.ed.gov/admins/lead/safety/clery.html",
     "PTCAS": "https://www.ptcas.org/home.aspx",
     "EV Charging": "https://en.wikipedia.org/wiki/Charging_station",
     "Amtrak": "https://www.amtrak.com/",
@@ -592,204 +622,83 @@ function escapeRegex(string) {
 }
 
 // --- REVISED addHyperlinks Function ---
-function addHyperlinks(text, linkedEntities = new Set()) {
+// --- REVISED addHyperlinks Function (Markdown Only) ---
+function addHyperlinks(text) { // Removed linkedEntities parameter as it's no longer needed
     if (!text || typeof text !== 'string') return text;
 
-    const matches = [];
-    // Sort keys by length descending to match longer phrases first
-    const sortedKeys = Object.keys(entityUrlMap).sort((a, b) => b.length - a.length);
+    // Convert Markdown links ([text](url) and ([text](url))) to HTML
+    // Handle parenthesized Markdown links first: ([Text](URL))
+    let processedText = text.replace(/\(\[\s*([^\]\s][^\]]*)\s*\]\(\s*([^\s\)]+)\s*\)\)/g, '<a href="$2" target="_blank">$1</a>');
+    // Handle standard Markdown links: [Text](URL)
+    processedText = processedText.replace(/\[\s*([^\]\s][^\]]*)\s*\]\(\s*([^\s\)]+)\s*\)/g, '<a href="$2" target="_blank">$1</a>');
 
-    // Find all potential matches
-    sortedKeys.forEach(entity => {
-        const url = entityUrlMap[entity];
-        // Regex to find the entity, ensuring it's a whole word (\b)
-        // We'll check for existing links later
-        const regex = new RegExp(`\\b(${escapeRegex(entity)})\\b`, 'gi'); // Global and case-insensitive
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            matches.push({
-                start: match.index,
-                end: regex.lastIndex,
-                entity: match[1], // The actual matched text (respecting case)
-                linkHtml: `<a href="${url}" target="_blank">${match[1]}</a>`,
-                entityKey: entity // Original key from map for tracking
-            });
-        }
-    });
-
-    // Sort matches by start index, then by length descending (for overlapping cases)
-    matches.sort((a, b) => {
-        if (a.start !== b.start) {
-            return a.start - b.start;
-        }
-        return b.end - a.end; // Longer match first if starts at same index
-    });
-
-    let result = '';
-    let lastIndex = 0;
-    const processedIndices = new Set(); // Track ranges already processed
-
-    matches.forEach(match => {
-        // Check if this match overlaps with an already processed (longer) match
-        let overlaps = false;
-        for (let i = match.start; i < match.end; i++) {
-            if (processedIndices.has(i)) {
-                overlaps = true;
-                break;
-            }
-        }
-
-        // Check if this entity has already been linked (case-insensitive)
-        const entityAlreadyLinked = linkedEntities.has(match.entityKey.toLowerCase());
-
-        // Only process if it doesn't overlap and hasn't been linked yet
-        if (!overlaps && !entityAlreadyLinked) {
-            // Check if the match is inside an existing HTML tag (simple check)
-            const textBefore = text.substring(lastIndex, match.start);
-            const openTagMatch = textBefore.lastIndexOf('<');
-            const closeTagMatch = textBefore.lastIndexOf('>');
-            const isInsideTag = openTagMatch > closeTagMatch; // Basic check if we're inside a tag
-
-            if (!isInsideTag) {
-                // Append text before the match
-                result += text.substring(lastIndex, match.start);
-                // Append the link
-                result += match.linkHtml;
-                // Update lastIndex
-                lastIndex = match.end;
-                // Mark indices as processed
-                for (let i = match.start; i < match.end; i++) {
-                    processedIndices.add(i);
-                }
-                // Mark entity as linked
-                linkedEntities.add(match.entityKey.toLowerCase());
-            }
-        }
-    });
-
-    // Append any remaining text after the last match
-    result += text.substring(lastIndex);
-
-    return result;
+    // Return text after only Markdown links are converted
+    return processedText;
 }
 
 
 // --- Details Display Function ---
 
 
-// Helper function to parse the semi-colon delimited key-value transportation data
-function parseTransportationData(dataString) {
-    const data = {};
-    if (!dataString || typeof dataString !== 'string') return data;
-
-    dataString.split(';').forEach(pair => {
-        const parts = pair.split(':');
-        if (parts.length >= 2) {
-            const key = parts[0].trim();
-            // Join remaining parts in case value contains ':'
-            const value = parts.slice(1).join(':').trim();
-            if (key && value) {
-                data[key] = value;
-            }
-        }
-    });
-    return data;
-}
+// Removed parseTransportationData as data is now plain text in CSV
 
 // Helper function to render transportation data as HTML (e.g., definition list)
-// Updated to use addHyperlinks for values and add icons
-function renderTransportationHTML(title, data, linkedEntities) { // Added linkedEntities param
-    // Add icon based on title first
-
-    // Add icon based on title first
+// Updated renderTransportationHTML to handle plain text and apply hyperlinks
+function renderTransportationHTML(title, textData, linkedEntities) {
     let icon = getIconForTitle(title);
+    let contentHtml = '<p>N/A</p>'; // Default if no data
 
-    if (!data || Object.keys(data).length === 0) {
-        return `<div class="transport-category"><h3>${icon} ${title}</h3><p>N/A</p></div>`; // Include icon even for N/A
+    if (textData && typeof textData === 'string' && textData.trim() !== '' && textData.trim() !== 'N/A') {
+        // Apply hyperlinking to the entire text block
+        contentHtml = `<p>${addHyperlinks(textData, linkedEntities)}</p>`;
+    } else {
+         contentHtml = `<p>N/A</p>`; // Explicitly set N/A if data is missing or just "N/A"
     }
 
-    let html = `<div class="transport-category"><h3>${icon} ${title}</h3><dl>`; // Added icon to h3
-    for (const key in data) {
-        let originalValue = data[key];
-        let displayValue = originalValue;
-        let displayKey = key.replace(/([A-Z])/g, ' $1').trim();
-        let potentialUrl = originalValue;
 
-        // Check for potential domain names missing protocol
-        const looksLikeDomain = typeof originalValue === 'string' && originalValue.includes('.') && !originalValue.includes(' ');
-        if (looksLikeDomain && !(originalValue.startsWith('http://') || originalValue.startsWith('https://'))) {
-            potentialUrl = `https://${originalValue}`;
-        }
-
-        const isUrl = typeof potentialUrl === 'string' && (potentialUrl.startsWith('http://') || potentialUrl.startsWith('https://'));
-
-        if (isUrl) {
-            // If the key indicates it's a link type, create a descriptive link
-            if (key.toLowerCase().includes('link')) {
-                let linkType = key.replace(/Link$/i, '');
-                if (linkType === '') linkType = 'Source';
-                displayKey = `${linkType} Link`;
-                displayValue = `<a href="${potentialUrl}" target="_blank">Visit ${linkType}</a>`;
-                // Don't run addHyperlinks on the generated link text itself
-            } else {
-                // Otherwise, just link the URL itself
-                displayValue = `<a href="${potentialUrl}" target="_blank">${originalValue}</a>`;
-                // Don't run addHyperlinks on the URL text itself
-            }
-        } else {
-            // If it's not a URL, apply hyperlinking to the text content
-            displayValue = addHyperlinks(originalValue, linkedEntities); // Pass linkedEntities
-        }
-
-        html += `<dt>${displayKey}:</dt><dd>${displayValue}</dd>`;
-    }
-    html += `</dl></div>`;
-    return html;
+    return `<div class="transport-category"><h3>${icon} ${title}</h3>${contentHtml}</div>`;
 }
 
 // Helper function to get icon based on title
 function getIconForTitle(title) {
     const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes('transit')) return '🚌';
-    if (lowerTitle.includes('driving') || lowerTitle.includes('parking')) return '🚗';
-    if (lowerTitle.includes('cycling')) return '🚲';
-    if (lowerTitle.includes('walking')) return '🚶';
-    if (lowerTitle.includes('ride') || lowerTitle.includes('taxi')) return '🚕';
-    if (lowerTitle.includes('airport')) return '✈️';
-    if (lowerTitle.includes('shuttle')) return '🚐';
+    if (lowerTitle === 'public transit') return '🚌';
+    if (lowerTitle === 'driving & parking') return '🚗';
+    if (lowerTitle === 'cycling') return '🚲';
+    if (lowerTitle === 'walking') return '🚶';
+    if (lowerTitle === 'ride sharing & taxis') return '🚕';
+    if (lowerTitle === 'airport access') return '✈️';
+    if (lowerTitle === 'campus shuttles') return '🚐';
     return ''; // Default no icon
 }
 
 function displayDetails(university) {
+    console.log(`[displayDetails] Data for ${university.name}: Positive Reviews:`, university.rmpPositive, 'Negative Reviews:', university.rmpNegative); // DEBUG LOG
     // Keep track of entities linked within this specific details view
     const linkedEntitiesInView = new Set();
-
     const netCost = calculateNetCost(university);
     const netCostText = formatNetCost(netCost, university.name);
+    console.log(`[displayDetails] University: ${university.name}, RMP Score Input: ${university.rmpScore}`);
+    console.log(`[displayDetails] University: ${university.name}, Raw Cost Breakdown: ${university.costBreakdown}`);
+    console.log(`[displayDetails] University: ${university.name}, Raw Links JSON: ${university.linksJson}`);
 
     // Use tuitionDisplay if available for the details section as well
     const tuitionValue = parseValue(university.tuition);
     const tuitionDisplayText = university.tuitionDisplay ? university.tuitionDisplay
         : (!isNaN(tuitionValue) ? `$${tuitionValue.toLocaleString()}` : (university.tuition || 'N/A'));
 
-    // Parse transportation data
-    const publicTransitData = parseTransportationData(university.publicTransitInfo);
-    const drivingParkingData = parseTransportationData(university.drivingParkingInfo);
-    const cyclingData = parseTransportationData(university.cyclingInfo);
-    const walkingData = parseTransportationData(university.walkingInfo);
-    const rideShareTaxiData = parseTransportationData(university.rideShareTaxiInfo);
-    const airportAccessData = parseTransportationData(university.airportAccessInfo);
-    const campusShuttleData = parseTransportationData(university.campusShuttleInfo);
+    // Transportation data is now plain text, no parsing needed here
 
-    // Apply hyperlinking to text fields
-    const linkedLocation = addHyperlinks(university.location || 'N/A', linkedEntitiesInView); // Calculate separately
-    const linkedTransitionInfo = addHyperlinks(university.transitionInfo || 'N/A', linkedEntitiesInView);
-    // Apply hyperlinking to RMP reviews
-    const linkedRmpPositive = addHyperlinks(university.rmpPositive || '', linkedEntitiesInView);
-    const linkedRmpNegative = addHyperlinks(university.rmpNegative || '', linkedEntitiesInView);
-    // Note: formatProfessorList needs internal logic update if we want links there too.
+    // Apply hyperlinking to text fields individually
+    const linkedLocation = addHyperlinks(university.location || 'N/A', new Set());
+    const linkedTransitionInfo = addHyperlinks(university.transitionInfo || 'N/A', new Set());
+    // Apply hyperlinking to RMP reviews and other text fields individually
+    const linkedRmpSummary = addHyperlinks(university.rmpSummary || 'N/A', new Set());
+    const linkedRmpPositive = university.rmpPositive || ''; // Pass raw string to formatReviewBox
+    const linkedRmpNegative = university.rmpNegative || ''; // Pass raw string to formatReviewBox
     const formattedProfList = formatProfessorList(university.rmpPtProfs); // Keep as is for now
-    const linkedFirstYearRecs = addHyperlinks(university.rmpFirstYearRecs || 'N/A', linkedEntitiesInView);
+    const linkedFirstYearRecs = addHyperlinks(university.rmpFirstYearRecs || 'N/A', new Set()); // Use new set
+
 
     let detailsHTML = `
         <div class="university-details">
@@ -800,7 +709,7 @@ function displayDetails(university) {
             <p><strong>Program Length:</strong> ${university.programLength || 'N/A'}</p>
             <!-- Placeholder for specific program link -->
             <p><strong>Scholarship Amount:</strong> ${university.scholarship || 'N/A'}</p>
-            <p><strong>Estimated Annual Tuition:</strong> ${tuitionDisplayText}</p>
+            <p><strong>Estimated Annual Tuition:</strong> ${!isNaN(parseValue(university.tuition)) ? `$${parseValue(university.tuition).toLocaleString()}` : (university.tuition || 'N/A')}</p>
             <p><strong>Estimated Net Cost:</strong> ${netCostText}</p>
             <h3>Student Body</h3>
             <p><strong>Total Population:</strong> ${university.totalPopulation || 'N/A'}</p>
@@ -814,94 +723,120 @@ function displayDetails(university) {
             ${formatReviewBox('👎 Negative Feedback', linkedRmpNegative, 'negative')}
             <div class="rmp-prof-list"><strong>PT/Related Professors:</strong> ${formattedProfList}</div>
             <p><strong>First Year Recs:</strong> ${linkedFirstYearRecs}</p>
+
+            <h3>Campus Dining Summary (from RMP Reviews)</h3>
+            <p>${addHyperlinks(foodSummaries[university.name] || 'N/A', new Set())}</p>
     `;
 
-    // Handle Cost Breakdown (Apply hyperlinking if it's simple text)
-    if (university.costBreakdown) {
-        const trimmedBreakdown = university.costBreakdown.trim();
-        if (trimmedBreakdown.startsWith('<') && trimmedBreakdown.endsWith('>')) {
-             detailsHTML += `<h3>Cost Breakdown:</h3>${university.costBreakdown}`;
-        } else if (trimmedBreakdown.includes(':') && trimmedBreakdown.includes(';')) {
-             detailsHTML += `<h3>Cost Breakdown:</h3><div class="cost-breakdown">`;
-             trimmedBreakdown.split(';').forEach(item => {
-                 const parts = item.split(':');
-                 if (parts.length === 2) {
-                     // Apply hyperlinking to the value part
-                     detailsHTML += `<div class="cost-item"><span>${parts[0].trim()}</span><span>${addHyperlinks(parts[1].trim(), linkedEntitiesInView)}</span></div>`;
+    // --- Handle Cost Breakdown (Using JSON.parse) ---
+    detailsHTML += `<h3>Cost Breakdown:</h3>`;
+    if (university.costBreakdown && university.costBreakdown.trim()) {
+        try {
+            const costData = JSON.parse(university.costBreakdown);
+            if (Object.keys(costData).length === 0) {
+                 detailsHTML += `<p>N/A</p>`;
+            } else if (costData.Note) {
+                 // Handle the specific {"Note": "..."} case
+                 detailsHTML += `<p>${addHyperlinks(costData.Note, new Set())}</p>`;
+            } else {
+                 detailsHTML += `<ul class="details-links-list">`;
+                 for (const key in costData) {
+                     const value = costData[key];
+                     // Format key (add spaces before caps, capitalize first letter)
+                     const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                     // Create link or text
+                     if (typeof value === 'string' && (value.startsWith('http://') || value.startsWith('https://'))) {
+                         detailsHTML += `<li><a href="${value}" target="_blank">${formattedKey}</a></li>`;
+                     } else {
+                         detailsHTML += `<li>${formattedKey}: ${addHyperlinks(String(value), new Set())}</li>`; // Ensure value is string for hyperlinking
+                     }
                  }
-             });
-             detailsHTML += `</div>`;
-        } else if (trimmedBreakdown) {
-             detailsHTML += `<h3>Cost Breakdown:</h3><p>${addHyperlinks(trimmedBreakdown, linkedEntitiesInView)}</p>`;
+                 detailsHTML += `</ul>`;
+            }
+        } catch (e) {
+            console.error(`Error parsing Cost Breakdown JSON for ${university.name}. String was: "${university.costBreakdown}"`, e);
+            // Fallback: Display raw string only if JSON parsing fails
+            detailsHTML += `<p>${addHyperlinks(university.costBreakdown, new Set())}</p>`;
         }
+    } else {
+        detailsHTML += `<p>N/A</p>`;
     }
+    // --- End Cost Breakdown ---
 
     // --- Add Transportation Details ---
     detailsHTML += `<div class="transportation-details"><h2>Transportation Information</h2>`;
-    // Pass linkedEntitiesInView to renderTransportationHTML so it can continue linking
-    detailsHTML += renderTransportationHTML("Public Transit", publicTransitData, linkedEntitiesInView);
-    detailsHTML += renderTransportationHTML("Driving & Parking", drivingParkingData, linkedEntitiesInView);
-    detailsHTML += renderTransportationHTML("Cycling", cyclingData, linkedEntitiesInView);
-    detailsHTML += renderTransportationHTML("Walking", walkingData, linkedEntitiesInView);
-    detailsHTML += renderTransportationHTML("Ride Sharing & Taxis", rideShareTaxiData, linkedEntitiesInView);
-    detailsHTML += renderTransportationHTML("Airport Access", airportAccessData, linkedEntitiesInView);
-    detailsHTML += renderTransportationHTML("Campus Shuttles", campusShuttleData, linkedEntitiesInView);
+    // Pass the raw text data and NEW sets to the updated renderTransportationHTML
+    detailsHTML += renderTransportationHTML("Public Transit", university.publicTransitInfo, new Set());
+    detailsHTML += renderTransportationHTML("Driving & Parking", university.drivingParkingInfo, new Set());
+    detailsHTML += renderTransportationHTML("Cycling", university.cyclingInfo, new Set());
+    detailsHTML += renderTransportationHTML("Walking", university.walkingInfo, new Set());
+    detailsHTML += renderTransportationHTML("Ride Sharing & Taxis", university.rideShareTaxiInfo, new Set());
+    detailsHTML += renderTransportationHTML("Airport Access", university.airportAccessInfo, new Set());
+    detailsHTML += renderTransportationHTML("Campus Shuttles", university.campusShuttleInfo, new Set());
     detailsHTML += `</div>`; // Close transportation-details
     // --- End Transportation Details ---
 
-    // --- Add Specific Program Link and Categorized Links ---
+    // --- Handle Links (Revised Parsing & Handling Non-JSON) ---
     let specificProgramLinkHtml = '';
-    let helpfulLinksHtml = '';
-    let jsonString = ''; // Define jsonString outside the try block
-    try {
-        jsonString = university.linksJson || '{}'; // Initialize jsonString here
-        // Attempt to fix common JSON errors (Revised Again)
-        // console.log("Original JSON String:", jsonString); // Optional: Add log for debugging
-        // Fix 1: Remove ALL backslashes (as they seem extraneous here)
-        jsonString = jsonString.replace(/\\/g, ''); // Remove ALL backslashes
-        // Fix 2: Add quotes around keys
-        jsonString = jsonString.replace(/([{,]\s*)([^":\s]+)(\s*:)/g, '$1"$2"$3');
-        // Fix 3: Add quotes around URL values (starting with http)
-        // Match colon, optional space, then capture the URL until a comma or closing brace
-        jsonString = jsonString.replace(/:\s*(https?:\/\/[^,}]+)/g, ': "$1"');
-        // console.log("Cleaned JSON String:", jsonString); // Optional: Add log for debugging
-        const links = JSON.parse(jsonString); // Attempt parsing the fully cleaned string
-        // console.log(`displayDetails: Parsed links object:`, links); // Debug log
+    let helpfulLinksHtml = '<h3>Helpful Links:</h3>'; // Initialize with header
+    let linksFound = false; // Flag to track if any links/data were processed
 
-        // Check for specific "DPT Program" link first
-        const dptProgramKey = Object.keys(links).find(k => k.toLowerCase() === 'dpt program'); // Case-insensitive check
-        if (dptProgramKey && links[dptProgramKey]) {
-             specificProgramLinkHtml = `<p><strong>Program Link:</strong> <a href="${links[dptProgramKey]}" target="_blank">${dptProgramKey} Page</a></p>`;
-             // Optionally remove it from the general list if you don't want duplicates
-             // delete links[dptProgramKey];
-        }
+    if (university.linksJson && university.linksJson.trim()) {
+        const rawLinksString = university.linksJson.trim();
+        console.log(`[displayDetails] University: ${university.name}, Raw Links Data: ${rawLinksString}`);
 
-        // Generate the rest of the "Helpful Links" list
-        if (Object.keys(links).length > 0) {
-            helpfulLinksHtml += `<ul class="details-links-list">`;
-            for (const key in links) {
-                 // Skip the DPT program link if we already handled it and chose to remove duplicates
-                 // if (key.toLowerCase() === 'dpt program' && specificProgramLinkHtml) continue;
+        try {
+            const links = JSON.parse(rawLinksString);
+            linksFound = true; // Assume parsing means we found something
 
-                const titleCaseKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                helpfulLinksHtml += `<li><a href="${links[key]}" target="_blank">${titleCaseKey}</a></li>`;
+            // Check if the parsed object is empty
+            if (Object.keys(links).length === 0) {
+                 linksFound = false; // Treat empty JSON object as no links found
+            } else {
+                // Check for specific "DPT Program" link first (case-insensitive key search)
+                const dptProgramKey = Object.keys(links).find(k => k.toLowerCase().includes('dpt') && k.toLowerCase().includes('program')); // More flexible search
+                if (dptProgramKey && links[dptProgramKey]) {
+                    const formattedKey = dptProgramKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                    specificProgramLinkHtml = `<p><strong>Program Link:</strong> <a href="${links[dptProgramKey]}" target="_blank">${formattedKey} Page</a></p>`;
+                    delete links[dptProgramKey]; // Remove from general list
+                }
+
+                // Generate the rest of the list
+                if (Object.keys(links).length > 0) {
+                    helpfulLinksHtml += `<ul class="details-links-list">`;
+                    for (const key in links) {
+                        const titleCaseKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                        helpfulLinksHtml += `<li><a href="${links[key]}" target="_blank">${titleCaseKey}</a></li>`;
+                    }
+                    helpfulLinksHtml += `</ul>`;
+                } else if (!specificProgramLinkHtml) {
+                    // If only DPT link existed and was removed, mark as no *other* links found
+                    linksFound = false;
+                }
             }
-            helpfulLinksHtml += `</ul>`;
-        } else if (!specificProgramLinkHtml) { // Only show "No specific links" if neither DPT nor others were found
-             helpfulLinksHtml = `<p>No specific links available.</p>`;
-        }
 
-    } catch (e) {
-        console.error(`Error parsing links JSON for ${university.name}. String was: "${jsonString}"`, e);
-        helpfulLinksHtml = `<p>Error loading links.</p>`;
+        } catch (e) {
+            console.error(`Error parsing links JSON for ${university.name}. String was: "${rawLinksString}"`, e);
+            // Fallback: Display raw string only if JSON parsing fails
+            helpfulLinksHtml += `<p>${addHyperlinks(rawLinksString, new Set())}</p>`;
+            linksFound = true; // We are displaying something, even if it's raw text
+        }
     }
+
+    // If after all attempts, no links or relevant text was found
+    if (!linksFound && !specificProgramLinkHtml) {
+        helpfulLinksHtml += `<p>No specific links available.</p>`;
+    } else if (!linksFound && specificProgramLinkHtml) {
+         // If only the DPT link was found, clear the "Helpful Links" header/list placeholder
+         helpfulLinksHtml = '';
+    }
+    // --- End Links Processing ---
 
     // Insert the specific program link at its placeholder
     detailsHTML = detailsHTML.replace('<!-- Placeholder for specific program link -->', specificProgramLinkHtml);
 
-    // Add the "Helpful Links" section header and list
-    detailsHTML += `<h3>Helpful Links:</h3>${helpfulLinksHtml}`;
-    // --- End Links Processing ---
+    // Add the "Helpful Links" section (header is now included above)
+    detailsHTML += helpfulLinksHtml;
 
     detailsHTML += `
             <p><strong>FAFSA Code:</strong> ${university.fafsaCode || 'N/A'}</p>
@@ -913,20 +848,56 @@ function displayDetails(university) {
     detailsDiv.innerHTML = detailsHTML;
 }
 // --- Helper function to format review boxes ---
+// --- Helper function to format review boxes (Improved Splitting) ---
 function formatReviewBox(title, reviewString, type) {
-    if (!reviewString || reviewString.trim() === '') {
-        return ''; // Don't display box if no reviews
+    console.log(`[formatReviewBox] Received title: "${title}", type: "${type}", reviewString:`, reviewString); // DEBUG LOG
+    if (!reviewString || reviewString.trim() === '' || reviewString.trim().toLowerCase() === 'n/a') {
+        return ''; // Don't display box if no reviews or just N/A
     }
-    const items = reviewString.split('* ').filter(item => item.trim() !== ''); // Split by bullet marker and remove empty entries
+
+    // Split by newline followed by optional whitespace and '*'
+    // This handles cases where '*' might not be the very first char on a line
+    let items = reviewString.split(/\n\s*\*\s*/).filter(item => item.trim() !== ''); // Changed const to let
+
+    // If splitting by newline didn't work (e.g., single line with multiple '*'), try splitting by '* '
+    if (items.length <= 1 && reviewString.includes('* ')) {
+         const potentialItems = reviewString.split('* ').filter(item => item.trim() !== '');
+         // Only use this split if it results in more than one item
+         if (potentialItems.length > 1) {
+             items = potentialItems;
+         } else if (potentialItems.length === 1 && !potentialItems[0].startsWith('*')) {
+             // If only one item resulted and it doesn't start with '*', use it
+             items = potentialItems;
+         } else {
+              // Otherwise, treat the whole string as one item if it doesn't start with '*'
+              items = [reviewString.trim().replace(/^\*\s*/, '')].filter(item => item); // Remove leading '*' if present
+         }
+    } else if (items.length === 1 && !items[0].startsWith('*')) {
+         // If split by newline resulted in one item not starting with '*', use it
+         items = [items[0].trim()];
+    } else {
+         // Clean up items from newline split (remove leading '*' if present)
+         items = items.map(item => item.trim().replace(/^\*\s*/, '')).filter(item => item);
+    }
+
+
+    if (items.length === 0) {
+        return ''; // Don't display if no valid items found after splitting
+    }
+
     let listHtml = '<ul>';
     items.forEach(item => {
-        // Basic quote detection and emphasis
-        let formattedItem = item.trim().replace(/Quote:\s*""([^"]+)""/g, '<em>"$1"</em>'); // Italicize quotes
+        let cleanedItem = item.trim();
+        // Handle potential quote formatting like ""Quote:""
+        cleanedItem = cleanedItem.replace(/""Quote:""\s*/gi, '<em>Quote:</em> ');
+        // Handle simpler quotes like "Quote: ..."
+        cleanedItem = cleanedItem.replace(/Quote:\s*""([^"]+)""/g, '<em>"$1"</em>');
+        // Apply hyperlinking
+        let formattedItem = addHyperlinks(cleanedItem, new Set());
         listHtml += `<li>${formattedItem}</li>`;
     });
     listHtml += '</ul>';
 
-    // Add glyph based on type
     const glyph = type === 'positive' ? '👍' : '👎';
 
     return `

@@ -1,0 +1,12 @@
+2025-04-08 03:20:01,562 - root - INFO - Anonymized telemetry enabled. See https://docs.browser-use.com/development/telemetry for more information.
+2025-04-08 03:20:04,173 - mcp.server.lowlevel.server - INFO - Processing request of type ListToolsRequest
+2025-04-08 03:20:04,174 - mcp.server.lowlevel.server - INFO - Processing request of type ListResourcesRequest
+2025-04-08 03:20:04,175 - mcp.server.lowlevel.server - INFO - Processing request of type ListResourceTemplatesRequest
+2025-04-09 01:14:12,635 - mcp.server.lowlevel.server - INFO - Processing request of type ListToolsRequest
+2025-04-09 01:14:13,605 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2025-04-09 01:14:13,613 - mcp_server_browser_use.run_agents - ERROR - 💥 GEMINI API key not found! 🔑 Please set the `GEMINI_API_KEY` environment variable or provide it in the UI.
+2025-04-09 01:14:13,613 - mcp_server_browser_use - ERROR - Cannot run browser agent task 'Go to https://www.ratemyprofessors.com/school/1198. Verify it's Widener University. Then, search for professors in the 'Physical Therapy', 'Health Science', 'Biology', and 'Psychology' departments. List the names, department, rating, and number of ratings for any professors found in these departments. Prioritize Physical Therapy professors.': 💥 GEMINI API key not found! 🔑 Please set the `GEMINI_API_KEY` environment variable or provide it in the UI.
+2025-04-09 11:35:12,915 - root - INFO - Anonymized telemetry enabled. See https://docs.browser-use.com/development/telemetry for more information.
+2025-04-09 11:35:15,477 - mcp.server.lowlevel.server - INFO - Processing request of type ListToolsRequest
+2025-04-09 11:35:15,478 - mcp.server.lowlevel.server - INFO - Processing request of type ListResourcesRequest
+2025-04-09 11:35:15,478 - mcp.server.lowlevel.server - INFO - Processing request of type ListResourceTemplatesRequest

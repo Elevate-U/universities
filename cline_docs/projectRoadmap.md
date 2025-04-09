@@ -7,6 +7,7 @@
 ## Key Features
 - [ ] Data validation and correction for CSV.
 - [ ] Search/filter functionality in the web interface.
+- [ ] Add a "Food" section to the web interface.
 
 ## Completion Criteria
 - University data CSV is accurate and up-to-date for specified universities.
@@ -16,4 +17,5 @@
 - Initial setup.
 
 ## Completed Tasks
-- (None yet)
+- Corrected general CSV formatting issues (column misalignment, non-standard quoting) in `universitydata.csv`.
+- Reviewed and confirmed DePaul University transportation information (kept existing detailed data)

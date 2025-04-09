@@ -1,14 +1,21 @@
 # Current Task
 
 ## Objectives
-- Correct inaccurate data (program length, FAFSA code, location, website, cost breakdown) for DePaul University and University of Illinois in `universitydata.csv`. (References `projectRoadmap.md` goal: Maintain accurate university data)
+- Add a new "Food" section to the university information website using the provided text summaries.
+- Correct the display logic for Widener University's tuition to show the value from the `Tuition` column ($57,180) instead of calculating an average from `TuitionDisplay`.
 
 ## Context
-- User identified incorrect data points for DePaul University and University of Illinois in the `universitydata.csv` file.
-- Previous tasks involved fixing general CSV formatting issues (quoting).
+- The user provided text summaries for the food section.
+- The user noted that Widener University's tuition was displayed incorrectly (showing an average instead of the specific value).
+- The `universitydata.csv` file contains the correct tuition value ($57,180) in the `Tuition` column.
+
+## Completed Steps
+- Added `foodSummaries` object to `script.js`.
+- Modified `displayDetails` in `script.js` to show food summaries.
+- Corrected `headerMap` in `script.js` to fix review/transportation data mismatch.
+- Modified `populateTable` in `script.js` to display tuition from the `Tuition` column for all universities, removing the special average calculation for Widener.
+- Modified `displayDetails` in `script.js` to display tuition from the `Tuition` column for all universities, removing the special average calculation for Widener.
 
 ## Next Steps
-- Gather correct information for the specified fields for both universities using external search.
-- Identify the relevant rows and columns in `universitydata.csv`.
-- Update the CSV file with the correct information.
-- Update project documentation (`projectRoadmap.md`, `codebaseSummary.md`) upon completion.
+- Update `codebaseSummary.md` to reflect the tuition display logic change.
+- Verify the changes on the website.
